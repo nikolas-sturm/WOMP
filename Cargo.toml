@@ -1,0 +1,15 @@
+[workspace]
+resolver = "3"
+members = [
+    "womp_lib",
+    "womp_cli"
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Nikolas Sturm <nikolas@nvsturm.com>"]
+description = "WindowsOutputManagerProtocol (WOMP) makes it easy to manage your Windows display devices."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/nikolas-sturm/womp"
