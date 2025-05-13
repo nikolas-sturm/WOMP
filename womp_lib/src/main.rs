@@ -9,7 +9,7 @@ fn get_config_file() -> Result<PathBuf, String> {
     let mut config_path = config_dir().ok_or("Could not determine config directory")?;
     config_path.push("WOMP");
     std::fs::create_dir_all(&config_path).map_err(|e| format!("Failed to create config dir: {e}"))?;
-    config_path.push("config.json");
+    config_path.push("displays.json");
     Ok(config_path)
 }
 
