@@ -5,10 +5,8 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-description.workspace = true
+description = "CLI Client for WOMP, the WindowsOutputManagerProtocol."
 readme.workspace = true
 
 [dependencies]
-womp = { path = "../womp" }
 clap = { version = "4.5.4", features = ["derive"] }
-serde_json = "1.0.140"

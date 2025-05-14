@@ -1,8 +1,8 @@
 [workspace]
 resolver = "3"
 members = [
-    "womp",
-    "womp_cli"
+    "crates/womp",
+    "crates/womp_cli"
 ]
 
 [workspace.package]
@@ -13,3 +13,7 @@ description = "WindowsOutputManagerProtocol (WOMP) makes it easy to manage your 
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/nikolas-sturm/womp"
+
+[workspace.dependencies]
+womp = { path = "crates/womp" }
+womp_cli = { path = "crates/womp_cli" }
