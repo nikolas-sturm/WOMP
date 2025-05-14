@@ -1,15 +1,16 @@
 #![allow(non_snake_case)]
 
+use crate::serde::win32_i32_tuple_struct::*;
+use crate::serde::win32_luid;
+use crate::serde::win32_pointl;
+use crate::serde::win32_rational;
+use crate::serde::win32_region;
+use crate::serde::win32_video_signal_info_union::Win32VideoSignalInfoUnion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use windows::Win32::Devices::Display::DISPLAYCONFIG_MODE_INFO;
 use windows::Win32::Devices::Display::*;
 use windows::Win32::Foundation::LUID as Win32LUID;
 use windows::Win32::Foundation::POINTL;
-use crate::serde::win32_luid;
-use crate::serde::win32_rational;
-use crate::serde::win32_region;
-use crate::serde::win32_pointl;
-use crate::serde::win32_i32_tuple_struct::*;
-use windows::Win32::Devices::Display::DISPLAYCONFIG_MODE_INFO;
 
 #[derive(Serialize, Deserialize)]
 pub struct ModeInfo {
@@ -31,8 +32,7 @@ pub struct VideoSignalInfo {
     pub activeSize: DISPLAYCONFIG_2DREGION,
     #[serde(with = "win32_region")]
     pub totalSize: DISPLAYCONFIG_2DREGION,
-    #[serde(skip)]
-    #[serde(default)]
+    #[serde(with = "Win32VideoSignalInfoUnion")]
     pub Anonymous: DISPLAYCONFIG_VIDEO_SIGNAL_INFO_0,
     #[serde(with = "win32_scanline")]
     pub scanLineOrdering: DISPLAYCONFIG_SCANLINE_ORDERING,
@@ -82,10 +82,7 @@ impl ModeInfoDef {
             match mode_info.infoType {
                 DISPLAYCONFIG_MODE_INFO_TYPE_TARGET => {
                     let targetMode = TargetModeSerdeRepr {
-                        targetVideoSignalInfo: mode_info
-                            .Anonymous
-                            .targetMode
-                            .targetVideoSignalInfo,
+                        targetVideoSignalInfo: mode_info.Anonymous.targetMode.targetVideoSignalInfo,
                     };
                     (Some(targetMode), None)
                 }

@@ -1,6 +1,6 @@
 use crate::serde::Display;
+use itertools::Itertools;
 use windows::Win32::{Devices::Display::*, Foundation::*};
-use std::fs;
 
 pub struct CCDWrapper {
     flags: QUERY_DISPLAY_CONFIG_FLAGS,
@@ -21,6 +21,29 @@ impl CCDWrapper {
             flags,
             paths,
             modes,
+        }
+    }
+
+    fn _fix_scan_line_ordering(&mut self) {
+        // Really not sure why this happens but sometimes the ordering will be set to 255 when it should be 1
+        for mode in &mut self.modes {
+            if mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE {
+                continue;
+            };
+
+            let current_order = unsafe {
+                mode.Anonymous
+                    .targetMode
+                    .targetVideoSignalInfo
+                    .scanLineOrdering
+            };
+
+            if current_order == DISPLAYCONFIG_SCANLINE_ORDERING(255) {
+                mode.Anonymous
+                    .targetMode
+                    .targetVideoSignalInfo
+                    .scanLineOrdering = DISPLAYCONFIG_SCANLINE_ORDERING(1);
+            }
         }
     }
 
@@ -72,6 +95,9 @@ impl CCDWrapper {
             self.modes
                 .resize_with(mode_count as usize, Default::default);
         }
+
+        //self.fix_scan_line_ordering();
+
         return Result::Ok(format!(
             "Successfully retrieved {path_count} Paths and {mode_count} Modes"
         ));
@@ -226,7 +252,7 @@ impl CCDWrapper {
 
         let modes: Vec<DISPLAYCONFIG_MODE_INFO> = target_modes
             .into_iter()
-            .chain(source_modes.into_iter())
+            .interleave(source_modes.into_iter())
             .collect();
 
         let mut flags = SDC_APPLY
@@ -238,6 +264,19 @@ impl CCDWrapper {
         let modeinfoarray = Some(modes.as_slice());
 
         let mut res: WIN32_ERROR;
+
+        unsafe {
+            let e = SetDisplayConfig(
+                patharray,
+                modeinfoarray,
+                SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_VALIDATE,
+            );
+            res = WIN32_ERROR(e.try_into().unwrap());
+        }
+
+        if res != ERROR_SUCCESS {
+            return Err(format!("Input arrays are invalid: {res:?}"));
+        }
 
         unsafe {
             let e = SetDisplayConfig(patharray, modeinfoarray, flags);
@@ -256,8 +295,7 @@ impl CCDWrapper {
         }
 
         if res != ERROR_SUCCESS {
-            eprintln!("Failed to apply using SDC_ALLOW_CHANGES: {res:?}");
-            return Err(format!("Failed to apply using default method: {res:?}"))
+            return Err(format!("Failed to apply using SDC_ALLOW_CHANGES: {res:?}"));
         }
 
         Ok(())
