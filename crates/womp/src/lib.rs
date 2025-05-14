@@ -1,5 +1,6 @@
 use ccd::CCDWrapper;
 use dirs::config_dir;
+use serde::config::{Config, Data};
 use std::{fs, io::BufReader, path::PathBuf};
 
 pub mod ccd;
@@ -15,11 +16,45 @@ pub fn get_config_path() -> Result<PathBuf, String> {
 
 pub fn get_profile_path(name: &String) -> Result<PathBuf, String> {
     let config_path = get_config_path().expect("Couldn't get config dir!");
-    let profile_dir = config_path.join("profiles");
+    let profiles_dir = config_path.join("profiles");
+    std::fs::create_dir_all(&profiles_dir)
+        .map_err(|e| format!("Failed to create profiles parent dir: {e}"))?;
+    let profile_dir = profiles_dir.join(String::from(name));
     std::fs::create_dir_all(&profile_dir)
-        .map_err(|e| format!("Failed to create profiles dir: {e}"))?;
-    let profile_path = profile_dir.join(String::from(name) + ".json");
-    Ok(profile_path)
+        .map_err(|e| format!("Failed to create profile dir: {e}"))?;
+    Ok(profile_dir)
+}
+
+pub fn read_config(config_file: &PathBuf) -> Result<Config, String> {
+    let contents = match fs::read_to_string(config_file) {
+        Ok(c) => c,
+        Err(_) => {
+            eprintln!(
+                "Could not read config file `{}`.",
+                config_file.to_string_lossy()
+            );
+            return Err(format!(
+                "Config file `{}` does not exist.",
+                config_file.to_string_lossy()
+            ));
+        }
+    };
+
+    let data: Data = match toml::from_str(&contents) {
+        Ok(d) => d,
+        Err(_) => {
+            eprintln!(
+                "Could not parse data in config file `{}`, will skip.",
+                config_file.to_string_lossy()
+            );
+            return Err(format!(
+                "Invalid config in `{}`.",
+                config_file.to_string_lossy()
+            ));
+        }
+    };
+
+    Ok(data.config)
 }
 
 pub fn save_current_profile(

@@ -16,6 +16,7 @@ pub mod win32_rational;
 pub mod win32_region;
 pub mod win32_widestring;
 pub mod win32_video_signal_info_union;
+pub mod config;
 
 #[derive(Serialize, Deserialize)]
 pub struct Display {
