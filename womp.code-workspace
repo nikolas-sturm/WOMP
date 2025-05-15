@@ -1,113 +1,117 @@
 {
-    "folders": [
-        {
-            "path": ".",
-            "name": "WOMP"
-        }
-    ],
-    "settings": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "rust-lang.rust-analyzer",
-        "editor.codeActionsOnSave": {
-            "source.fixAll": "explicit",
-            "source.organizeImports": "explicit"
-        },
-        "files.exclude": {
-            "**/.git": true,
-            "**/.svn": true,
-            "**/.hg": true,
-            "**/CVS": true,
-            "**/.DS_Store": true,
-            "**/Thumbs.db": true,
-            "target": true,
-            "Cargo.lock": true
-        }
+  "folders": [
+    {
+      "path": ".",
+      "name": "WOMP"
     },
-    "extensions": {
-        "recommendations": [
-            "rust-lang.rust-analyzer",
-            "vadimcn.vscode-lldb",
-            "fill-labs.dependi",
-            "tamasfe.even-better-toml"
-        ]
-    },
-    "launch": {
-        "version": "0.2.0",
-        "configurations": [
-            {
-                "type": "lldb",
-                "request": "launch",
-                "name": "Debug executable 'womp_lib'",
-                "cargo": {
-                    "args": [
-                        "build",
-                        "--bin=womp_lib",
-                        "--package=womp_lib"
-                    ],
-                    "filter": {
-                        "name": "womp_lib",
-                        "kind": "bin"
-                    }
-                },
-                "args": [],
-                "cwd": "${workspaceFolder}"
-            },
-            {
-                "type": "lldb",
-                "request": "launch",
-                "name": "Debug unit tests in executable 'womp_lib'",
-                "cargo": {
-                    "args": [
-                        "test",
-                        "--no-run",
-                        "--bin=womp_lib",
-                        "--package=womp_lib"
-                    ],
-                    "filter": {
-                        "name": "womp_lib",
-                        "kind": "bin"
-                    }
-                },
-                "args": [],
-                "cwd": "${workspaceFolder}"
-            },
-            {
-                "type": "lldb",
-                "request": "launch",
-                "name": "Debug executable 'womp_cli'",
-                "cargo": {
-                    "args": [
-                        "build",
-                        "--bin=womp_cli",
-                        "--package=womp_cli"
-                    ],
-                    "filter": {
-                        "name": "womp_cli",
-                        "kind": "bin"
-                    }
-                },
-                "args": [],
-                "cwd": "${workspaceFolder}"
-            },
-            {
-                "type": "lldb",
-                "request": "launch",
-                "name": "Debug unit tests in executable 'womp_cli'",
-                "cargo": {
-                    "args": [
-                        "test",
-                        "--no-run",
-                        "--bin=womp_cli",
-                        "--package=womp_cli"
-                    ],
-                    "filter": {
-                        "name": "womp_cli",
-                        "kind": "bin"
-                    }
-                },
-                "args": [],
-                "cwd": "${workspaceFolder}"
-            }
-        ]
+    {
+      "path": "../../AppData/Roaming/WOMP",
+      "name": "Config"
     }
+  ],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "files.exclude": {
+      "**/.git": true,
+      "**/.svn": true,
+      "**/.hg": true,
+      "**/CVS": true,
+      "**/.DS_Store": true,
+      "**/Thumbs.db": true,
+      "target": true,
+      "Cargo.lock": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "rust-lang.rust-analyzer",
+      "vadimcn.vscode-lldb",
+      "fill-labs.dependi",
+      "tamasfe.even-better-toml"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug executable 'womp_lib'",
+        "cargo": {
+          "args": [
+            "build",
+            "--bin=womp_lib",
+            "--package=womp_lib"
+          ],
+          "filter": {
+            "name": "womp_lib",
+            "kind": "bin"
+          }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+      },
+      {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug unit tests in executable 'womp_lib'",
+        "cargo": {
+          "args": [
+            "test",
+            "--no-run",
+            "--bin=womp_lib",
+            "--package=womp_lib"
+          ],
+          "filter": {
+            "name": "womp_lib",
+            "kind": "bin"
+          }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+      },
+      {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug executable 'womp_cli'",
+        "cargo": {
+          "args": [
+            "build",
+            "--bin=womp_cli",
+            "--package=womp_cli"
+          ],
+          "filter": {
+            "name": "womp_cli",
+            "kind": "bin"
+          }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+      },
+      {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Debug unit tests in executable 'womp_cli'",
+        "cargo": {
+          "args": [
+            "test",
+            "--no-run",
+            "--bin=womp_cli",
+            "--package=womp_cli"
+          ],
+          "filter": {
+            "name": "womp_cli",
+            "kind": "bin"
+          }
+        },
+        "args": [],
+        "cwd": "${workspaceFolder}"
+      }
+    ]
+  }
 }

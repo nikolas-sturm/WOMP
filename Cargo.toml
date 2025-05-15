@@ -2,7 +2,8 @@
 resolver = "3"
 members = [
     "crates/womp",
-    "crates/womp_cli"
+    "crates/womp_cli",
+    "crates/womp_gui/src-tauri"
 ]
 
 [workspace.package]
@@ -17,3 +18,4 @@ repository = "https://github.com/nikolas-sturm/womp"
 [workspace.dependencies]
 womp = { path = "crates/womp" }
 womp_cli = { path = "crates/womp_cli" }
+womp_gui = { path = "crates/womp_gui/src-tauri" }

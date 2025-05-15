@@ -7,10 +7,7 @@ struct RationalDef {
     denominator: u32,
 }
 
-pub fn serialize<S>(
-    rational: &DISPLAYCONFIG_RATIONAL,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(rational: &DISPLAYCONFIG_RATIONAL, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

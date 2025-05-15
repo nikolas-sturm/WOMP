@@ -40,7 +40,7 @@ impl SourceInfoDef {
             adapterId: source_info.adapterId,
             id: source_info.id,
             statusFlags: source_info.statusFlags,
-            modeInfoIdx
+            modeInfoIdx,
         };
         helper.serialize(serializer)
     }

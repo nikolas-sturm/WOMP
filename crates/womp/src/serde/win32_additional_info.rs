@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 
-use serde::{Deserialize, Serialize};
-use windows::Win32::{Devices::Display::*, Foundation::LUID};
-use crate::serde::win32_i32_tuple_struct::{win32_output, win32_device_info_type};
+use crate::serde::win32_i32_tuple_struct::{win32_device_info_type, win32_output};
 use crate::serde::win32_luid;
 use crate::serde::win32_widestring;
+use serde::{Deserialize, Serialize};
+use windows::Win32::{Devices::Display::*, Foundation::LUID};
 
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "DISPLAYCONFIG_DEVICE_INFO_HEADER")]

@@ -1,20 +1,22 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
-pub struct Data {
-    pub config: Config
+pub struct Profile {
+    pub config: Config,
 }
 
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Config {
-    pub run: Run
+    pub name: String,
+    pub description: String,
+    pub run: Run,
 }
 
 #[derive(Serialize, Deserialize, Default)]
 #[serde(default)]
 pub struct Run {
     pub before: String,
-    pub after: String
+    pub after: String,
 }

@@ -1,9 +1,10 @@
 use ccd::CCDWrapper;
 use dirs::config_dir;
-use serde::config::{Config, Data};
+use serde::config::{Config, Profile};
 use std::{fs, io::BufReader, path::PathBuf};
 
 pub mod ccd;
+pub mod global_state;
 pub mod serde;
 
 pub fn get_config_path() -> Result<PathBuf, String> {
@@ -40,7 +41,7 @@ pub fn read_config(config_file: &PathBuf) -> Result<Config, String> {
         }
     };
 
-    let data: Data = match toml::from_str(&contents) {
+    let profile: Profile = match toml::from_str(&contents) {
         Ok(d) => d,
         Err(_) => {
             eprintln!(
@@ -54,7 +55,7 @@ pub fn read_config(config_file: &PathBuf) -> Result<Config, String> {
         }
     };
 
-    Ok(data.config)
+    Ok(profile.config)
 }
 
 pub fn save_current_profile(

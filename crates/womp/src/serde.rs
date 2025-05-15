@@ -5,6 +5,7 @@ use windows::Win32::Devices::Display::{
     DISPLAYCONFIG_ADAPTER_NAME, DISPLAYCONFIG_MODE_INFO, DISPLAYCONFIG_PATH_INFO,
     DISPLAYCONFIG_TARGET_DEVICE_NAME,
 };
+pub mod config;
 pub mod win32_additional_info;
 pub mod win32_bool;
 pub mod win32_i32_tuple_struct;
@@ -14,9 +15,8 @@ pub mod win32_path_info;
 pub mod win32_pointl;
 pub mod win32_rational;
 pub mod win32_region;
-pub mod win32_widestring;
 pub mod win32_video_signal_info_union;
-pub mod config;
+pub mod win32_widestring;
 
 #[derive(Serialize, Deserialize)]
 pub struct Display {

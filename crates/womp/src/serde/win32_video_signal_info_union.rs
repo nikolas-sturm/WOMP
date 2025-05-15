@@ -49,10 +49,10 @@ impl Win32VideoSignalInfoUnion {
                 result.AdditionalSignalInfo = DISPLAYCONFIG_VIDEO_SIGNAL_INFO_0_0 {
                     _bitfield: bitfield,
                 };
-            },
+            }
             VideoSignalInfoUnionRepr::VideoStandard(val) => {
                 result.videoStandard = val;
-            },
+            }
         }
 
         Ok(result)

@@ -7,10 +7,7 @@ struct RegionDef {
     cy: u32,
 }
 
-pub fn serialize<S>(
-    region: &DISPLAYCONFIG_2DREGION,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
+pub fn serialize<S>(region: &DISPLAYCONFIG_2DREGION, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
