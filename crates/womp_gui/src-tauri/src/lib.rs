@@ -1,13 +1,18 @@
-use womp::ccd::CCDWrapper;
-use womp::global_state::{init_debug_flag, is_debug};
-use womp::serde::config::Config;
-use womp::{apply_profile_from_file, get_config_path, save_current_profile};
+use tauri::{Manager, AppHandle, Window};
+use window_vibrancy::*;
+use womp::{get_config_path};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            let window = app.get_webview_window("main").unwrap();
+
+            apply_mica(&window, Some(true)).expect("Failed to apply mica");
+            Ok(())
+        })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_profiles])
+        .invoke_handler(tauri::generate_handler![get_profiles, change_theme])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -23,4 +28,11 @@ fn get_profiles() -> Vec<String> {
         profiles.push(path.file_name().unwrap().to_str().unwrap().to_string());
     }
     profiles
+}
+
+#[tauri::command]
+fn change_theme(handle: AppHandle, dark: bool) {
+    let window = handle.get_webview_window("main").unwrap();
+    
+    apply_mica(&window, Some(dark)).expect("Failed to apply mica");
 }

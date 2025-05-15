@@ -1,45 +1,39 @@
+import { Button, makeStyles, List, ListItem, Label } from "@fluentui/react-components";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import "./App.css";
-import reactLogo from "./assets/react.svg";
+import { ThemeToggle } from "./ThemeToggle";
+
+const useStyles = makeStyles({
+  root: {
+    height: "100vh",
+    width: "100vw",
+  },
+});
 
 function App() {
+  const classes = useStyles();
+
   const [profiles, setProfiles] = useState<string[]>([]);
 
-  async function greet() {
+  async function get_profiles() {
     const profiles: string[] = await invoke("get_profiles");
     setProfiles(profiles);
-}
+  }
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <main className={classes.root}>
+      <ThemeToggle />
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <button type="submit">Greet</button>
-      </form>
-      {profiles.map((profile) => (
-        <p key={profile}>{profile}</p>
-      ))}
+      <Button appearance="primary" onClick={async () => await get_profiles()}>
+        Click me
+      </Button>
+      <Label>Profiles</Label>
+      <List>
+        {profiles.map((profile) => (
+          <ListItem key={profile}>{profile}</ListItem>
+        ))}
+      </List>
     </main>
   );
 }
