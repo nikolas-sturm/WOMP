@@ -1,11 +1,44 @@
-import React from "react";
+import App from "@/App";
+import { useThemeStore } from "@/lib/themeStore";
+import { FluentProvider, makeStyles } from "@fluentui/react-components";
+import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
-import { FluentProvider } from "@fluentui/react-components";
-import { useThemeStore } from "./zustand";
+
+const useStyles = makeStyles({
+  center: {
+    padding: "20px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+  },
+});
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const theme = useThemeStore((state) => state.theme);
+  const { getActiveTheme, initThemes, error, initialized } = useThemeStore();
+
+  const classes = useStyles();
+
+  useEffect(() => {
+    initThemes();
+  }, []);
+
+  const theme = getActiveTheme();
+
+  if (!initialized) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <FluentProvider theme={theme}>
+        <div className={classes.center}>
+          Error loading theme: {error}
+        </div>
+      </FluentProvider>
+    );
+  }
+
   return <FluentProvider theme={theme}>{children}</FluentProvider>;
 }
 

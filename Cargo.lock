@@ -5104,7 +5104,9 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "toml",
  "window-vibrancy",
+ "windows 0.61.1",
  "womp",
 ]
 

@@ -15,6 +15,15 @@ body {
   margin: 0;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+button, .fui-Button {
+  cursor: default !important;
+  min-width: 0 !important;
+}
+
 .fui-FluentProvider {
   background: transparent !important;
 }

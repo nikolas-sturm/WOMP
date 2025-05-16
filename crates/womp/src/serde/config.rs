@@ -12,6 +12,7 @@ pub struct Config {
     pub name: String,
     pub description: String,
     pub run: Run,
+    pub icon: String,
 }
 
 #[derive(Serialize, Deserialize, Default)]

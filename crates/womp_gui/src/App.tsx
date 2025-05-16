@@ -1,40 +1,50 @@
-import { Button, makeStyles, List, ListItem, Label } from "@fluentui/react-components";
-import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { BackButton } from "@/components/BackButton";
+import { Content } from "@/components/Content";
+import { NavigationView } from "@/components/NavigationView";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Titlebar } from "@/components/Titlebar";
+import { useNavigationStore } from "@/lib/navigationStore";
+import { useProfileStore } from "@/lib/profileStore";
+import { makeStyles } from "@fluentui/react-components";
+import { useEffect } from "react";
 import "./App.css";
-import { ThemeToggle } from "./ThemeToggle";
 
 const useStyles = makeStyles({
   root: {
-    height: "100vh",
+    height: "calc(100vh - 50px)",
     width: "100vw",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: "50px",
   },
 });
 
 function App() {
   const classes = useStyles();
 
-  const [profiles, setProfiles] = useState<string[]>([]);
+  const { selectedKey, setSelectedKey } = useNavigationStore();
 
-  async function get_profiles() {
-    const profiles: string[] = await invoke("get_profiles");
-    setProfiles(profiles);
-  }
+  const { initProfiles } = useProfileStore();
+
+  useEffect(() => {
+    initProfiles();
+  }, []);
 
   return (
-    <main className={classes.root}>
+    <>
+      <Titlebar />
+      <main className={classes.root}>
+        <NavigationView
+          selectedKey={selectedKey}
+          onSelectedKeyChange={setSelectedKey}
+        />
+        <Content />
+      </main>
+      <BackButton />
       <ThemeToggle />
-
-      <Button appearance="primary" onClick={async () => await get_profiles()}>
-        Click me
-      </Button>
-      <Label>Profiles</Label>
-      <List>
-        {profiles.map((profile) => (
-          <ListItem key={profile}>{profile}</ListItem>
-        ))}
-      </List>
-    </main>
+    </>
   );
 }
 
