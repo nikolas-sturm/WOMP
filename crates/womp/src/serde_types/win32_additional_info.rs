@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 
-use crate::serde::win32_i32_tuple_struct::{win32_device_info_type, win32_output};
-use crate::serde::win32_luid;
-use crate::serde::win32_widestring;
+use crate::serde_types::win32_i32_tuple_struct::{win32_device_info_type, win32_output};
+use crate::serde_types::win32_luid;
+use crate::serde_types::win32_widestring;
 use serde::{Deserialize, Serialize};
 use windows::Win32::{Devices::Display::*, Foundation::LUID};
 

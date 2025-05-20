@@ -13,32 +13,36 @@ export const Icon = ({ icon }: { icon: string }) => {
 
   const FLUENT_PUA_RANGES = [
     {
-      start: 0xE700,
-      end: 0xE900,
+      start: 0xe700,
+      end: 0xe900,
     },
     {
-      start: 0xEA00,
-      end: 0xEC00,
+      start: 0xea00,
+      end: 0xec00,
     },
     {
-      start: 0xED00,
-      end: 0xEF00,
+      start: 0xed00,
+      end: 0xef00,
     },
     {
-      start: 0xF000,
-      end: 0xF200,
+      start: 0xf000,
+      end: 0xf200,
     },
     {
-      start: 0xF300,
-      end: 0xF500,
+      start: 0xf300,
+      end: 0xf500,
     },
     {
-      start: 0xF600,
-      end: 0xF800,
-    }
-  ]
+      start: 0xf600,
+      end: 0xf800,
+    },
+  ];
 
-  if (FLUENT_PUA_RANGES.some((range) => charCode >= range.start && charCode <= range.end)) {
+  if (
+    FLUENT_PUA_RANGES.some(
+      (range) => charCode >= range.start && charCode <= range.end,
+    )
+  ) {
     return <span className={styles.fluentIcon}>{icon}</span>;
   }
 

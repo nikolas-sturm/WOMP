@@ -1,85 +1,17 @@
-import {
-  Button,
-  makeStyles,
-  mergeClasses,
-  tokens
-} from "@fluentui/react-components";
+import { Button, mergeClasses } from "@fluentui/react-components";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useState } from "react";
-
-const useStyles = makeStyles({
-  titlebar: {
-    position: "fixed",
-    boxSizing: "border-box",
-    top: "1px",
-    left: "1px",
-    width: "calc(100% - 1px)",
-    height: "50px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    WebkitAppRegion: "drag", // This makes the titlebar draggable
-    zIndex: 100,
-  },
-  title: {
-    padding: "20px 20px",
-    marginLeft: "30px",
-    fontSize: "12px",
-    flexGrow: 1,
-    overflow: "hidden",
-    whiteSpace: "nowrap",
-    textOverflow: "ellipsis",
-    cursor: "default !important",
-  },
-  windowControls: {
-    display: "flex",
-    height: "100%",
-    position: "absolute",
-    marginTop: "-1px",
-    top: 0,
-    right: 0,
-    WebkitAppRegion: "no-drag", // Prevent drag behavior on control buttons
-    zIndex: 3000,
-  },
-  controlButton: {
-    width: "46px",
-    height: "100%",
-    fontSize: "10px",
-    borderRadius: 0,
-    color: tokens.colorNeutralForeground1,
-    "&:hover": {
-      backgroundColor: tokens.colorNeutralStencil2Alpha,
-      color: tokens.colorNeutralForeground1,
-    },
-    "&:hover:active": {
-      backgroundColor: tokens.colorNeutralBackgroundAlpha2,
-      color: tokens.colorNeutralForeground1,
-    },
-  },
-  closeButton: {
-    "&:hover": {
-      backgroundColor: "#E81123",
-    },
-    "&:hover:active": {
-      backgroundColor: "#f35966",
-      color: tokens.colorNeutralBackground1,
-    },
-  },
-  titleIcon: {
-    fontSize: "16px",
-    verticalAlign: "middle",
-  }
-});
+import { useTitlebarStyles } from "@/styles/titlebar";
 
 export function Titlebar() {
-  const styles = useStyles();
+  const styles = useTitlebarStyles();
   const [isMaximized, setIsMaximized] = useState(false);
   const [windowTitle, setWindowTitle] = useState("WOMP");
 
   useEffect(() => {
     // Get current window instance
     const appWindow = getCurrentWindow();
-    
+
     // Update maximized state and listen for changes
     const updateMaximizedState = async () => {
       try {
@@ -144,28 +76,34 @@ export function Titlebar() {
   return (
     <div className={styles.titlebar} data-tauri-drag-region>
       <div className={styles.title} data-tauri-drag-region>
-        <span className={styles.titleIcon}>&#xE7F4;</span>&nbsp;&nbsp;&nbsp;&nbsp;{windowTitle}
+        <span className={styles.titleIcon}>&#xE7F4;</span>
+        &nbsp;&nbsp;&nbsp;&nbsp;{windowTitle}
       </div>
       <div className={styles.windowControls}>
-        <Button 
+        <Button
           appearance="transparent"
-          aria-label="Minimize" 
-          className={styles.controlButton} 
-          onClick={handleMinimize} 
-        >&#xE921;</Button>
-        <Button 
-          appearance="transparent" 
-          aria-label={isMaximized ? "Restore" : "Maximize"} 
-          className={styles.controlButton} 
-          onClick={handleMaximizeRestore} 
-        >{isMaximized ? "\uE923" : "\uE922"}</Button>
-        <Button 
+          aria-label="Minimize"
+          className={styles.controlButton}
+          onClick={handleMinimize}
+        >
+          &#xE921;
+        </Button>
+        <Button
           appearance="transparent"
-          aria-label="Close" 
-          className={mergeClasses(styles.controlButton, styles.closeButton)} 
-          onClick={handleClose} 
-        >&#xE8BB;</Button>
-        
+          aria-label={isMaximized ? "Restore" : "Maximize"}
+          className={styles.controlButton}
+          onClick={handleMaximizeRestore}
+        >
+          {isMaximized ? "\uE923" : "\uE922"}
+        </Button>
+        <Button
+          appearance="transparent"
+          aria-label="Close"
+          className={mergeClasses(styles.controlButton, styles.closeButton)}
+          onClick={handleClose}
+        >
+          &#xE8BB;
+        </Button>
       </div>
     </div>
   );

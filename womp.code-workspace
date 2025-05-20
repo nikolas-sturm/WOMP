@@ -16,6 +16,7 @@
       "source.fixAll": "explicit",
       "source.organizeImports": "explicit"
     },
+    "biome.enabled": false,
     "files.exclude": {
       "**/.git": true,
       "**/.svn": true,
@@ -29,14 +30,38 @@
       "**/vite-env.d.ts": true,
       "**/package-lock.json": true,
       "**/node_modules": true
-    }
+    },
+    "[typescript]": {
+      "editor.tabSize": 2,
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.codeActionsOnSave": {
+        "quickfix.biome": "explicit",
+      },
+    },
+    "[typescriptreact]": {
+      "editor.tabSize": 2,
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.codeActionsOnSave": {
+        "quickfix.biome": "explicit",
+      },
+    },
+    "[css]": {
+      "editor.defaultFormatter": "biomejs.biome",
+      "editor.codeActionsOnSave": {
+        "quickfix.biome": "explicit",
+      },
+    },
+    "[json]": {
+      "editor.defaultFormatter": "biomejs.biome"
+    },
   },
   "extensions": {
     "recommendations": [
       "rust-lang.rust-analyzer",
       "vadimcn.vscode-lldb",
       "fill-labs.dependi",
-      "tamasfe.even-better-toml"
+      "tamasfe.even-better-toml",
+      "biomejs.biome",
     ]
   },
   "launch": {

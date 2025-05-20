@@ -1,11 +1,11 @@
 #![allow(non_snake_case)]
 
-use crate::serde::win32_i32_tuple_struct::*;
-use crate::serde::win32_luid;
-use crate::serde::win32_pointl;
-use crate::serde::win32_rational;
-use crate::serde::win32_region;
-use crate::serde::win32_video_signal_info_union::Win32VideoSignalInfoUnion;
+use crate::serde_types::win32_i32_tuple_struct::*;
+use crate::serde_types::win32_luid;
+use crate::serde_types::win32_pointl;
+use crate::serde_types::win32_rational;
+use crate::serde_types::win32_region;
+use crate::serde_types::win32_video_signal_info_union::Win32VideoSignalInfoUnion;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use windows::Win32::Devices::Display::DISPLAYCONFIG_MODE_INFO;
 use windows::Win32::Devices::Display::*;

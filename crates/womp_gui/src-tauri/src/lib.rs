@@ -5,7 +5,9 @@ use tauri::{AppHandle, Manager, WebviewWindowBuilder};
 use window_vibrancy::*;
 use windows::Foundation::TypedEventHandler;
 use windows::UI::ViewManagement::{UIColorType, UISettings};
-pub mod protocol;
+
+pub mod external;
+pub mod tray;
 
 // Store everything related to color change detection
 struct ColorChangeHandler {
@@ -19,8 +21,17 @@ static mut COLOR_HANDLER: Option<Arc<ColorChangeHandler>> = None;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    unsafe {
+        std::env::set_var(
+            "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+            "--enable-features=msEdgeFluentOverlayScrollbar,msOverlayScrollbarWinStyle",
+        );
+    }
+
     tauri::Builder::default()
         .setup(|app| {
+            let _tray = tray::create_tray(app);
+
             let main_window = WebviewWindowBuilder::new(
                 app,
                 "main",
@@ -28,6 +39,7 @@ pub fn run() {
             )
             .title("WOMP Config UI")
             .inner_size(800.0, 600.0)
+            .min_inner_size(800.0, 600.0)
             .resizable(true)
             .decorations(false)
             .transparent(true)
@@ -45,11 +57,20 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            // Functions for the frontend
             change_theme,
             get_system_colors,
-            protocol::get_profiles,
-            // END
+            external::apply_display_layout,
+            external::save_current_display_layout,
+            external::get_profiles,
+            external::get_config_dir,
+            external::get_profiles_dir,
+            external::get_profile_dir,
+            external::read_display_config,
+            external::write_display_config,
+            external::rename_profile,
+            external::delete_profile,
+            external::clone_profile,
+            external::open_profile_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,8 +1,12 @@
-import { webDarkTheme as darkBase, webLightTheme as lightBase, type Theme } from "@fluentui/react-components";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from '@tauri-apps/api/event';
-import { create } from "zustand";
 import { buildTheme } from "@/lib/theme";
+import {
+  type Theme,
+  webDarkTheme as darkBase,
+  webLightTheme as lightBase,
+} from "@fluentui/react-components";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { create } from "zustand";
 
 export interface AccentColors {
   background: string;
@@ -33,7 +37,7 @@ interface ThemeActions {
 
 type ThemeStore = ThemeState & ThemeActions;
 
-async function getThemes(): Promise<{darkTheme: Theme; lightTheme: Theme}> {
+async function getThemes(): Promise<{ darkTheme: Theme; lightTheme: Theme }> {
   try {
     const colorArray: string[] = await invoke("get_system_colors");
 
@@ -56,9 +60,9 @@ async function getThemes(): Promise<{darkTheme: Theme; lightTheme: Theme}> {
     return { darkTheme, lightTheme };
   } catch (error) {
     console.error("Failed to get system colors:", error);
-    return { 
-      darkTheme: darkBase, 
-      lightTheme: lightBase 
+    return {
+      darkTheme: darkBase,
+      lightTheme: lightBase,
     };
   }
 }
@@ -75,7 +79,7 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
     const state = get();
     return state.activeTheme === "dark" ? state.darkTheme : state.lightTheme;
   },
-  
+
   setTheme: async (theme: "dark" | "light") => {
     try {
       await invoke("change_theme", { dark: theme === "dark" });
@@ -85,42 +89,45 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
       set({ error: "Failed to set theme" });
     }
   },
-  
+
   toggleTheme: async () => {
     const { activeTheme } = get();
     const newTheme = activeTheme === "dark" ? "light" : "dark";
     return get().setTheme(newTheme);
   },
-  
+
   initThemes: async () => {
     set({ error: null });
     try {
       // Try to get system preference for dark mode
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
       const initialTheme = prefersDark ? "dark" : "light";
-      
+
       // Get theme colors
       const { darkTheme, lightTheme } = await getThemes();
-      
+
       // Update state with themes and initial preference
-      set({ 
+      set({
         initialized: true,
-        darkTheme, 
-        lightTheme, 
-        activeTheme: initialTheme, 
+        darkTheme,
+        lightTheme,
+        activeTheme: initialTheme,
       });
-      
+
       // Sync with system
       await invoke("change_theme", { dark: initialTheme === "dark" });
-      
+
       // Listen for system theme changes
-      window.matchMedia('(prefers-color-scheme: dark)')
-        .addEventListener('change', e => {
+      window
+        .matchMedia("(prefers-color-scheme: dark)")
+        .addEventListener("change", (e) => {
           get().setTheme(e.matches ? "dark" : "light");
         });
-      
+
       // Listen for system accent color changes
-      await listen<string[]>('system-colors-changed', async ({ payload }) => {
+      await listen<string[]>("system-colors-changed", async ({ payload }) => {
         const systemColors: AccentColors = {
           background: payload[0],
           foreground: payload[1],
@@ -147,12 +154,12 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
         // Update the store with new theme values
         set({
           darkTheme: updatedDarkTheme,
-          lightTheme: updatedLightTheme
+          lightTheme: updatedLightTheme,
         });
       });
     } catch (error) {
       console.error("Failed to initialize themes:", error);
       set({ error: "Failed to initialize themes" });
     }
-  }
+  },
 }));

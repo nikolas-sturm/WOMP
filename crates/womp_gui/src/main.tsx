@@ -21,7 +21,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     initThemes();
-  }, []);
+  }, [initThemes]);
 
   const theme = getActiveTheme();
 
@@ -32,9 +32,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
   if (error) {
     return (
       <FluentProvider theme={theme}>
-        <div className={classes.center}>
-          Error loading theme: {error}
-        </div>
+        <div className={classes.center}>Error loading theme: {error}</div>
       </FluentProvider>
     );
   }
@@ -42,10 +40,11 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
   return <FluentProvider theme={theme}>{children}</FluentProvider>;
 }
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
       <App />
     </ThemeProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

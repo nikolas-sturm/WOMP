@@ -15,9 +15,7 @@
       "capabilities": [
         {
           "identifier": "allow-window-controls",
-          "windows": [
-            "*"
-          ],
+          "windows": ["*"],
           "permissions": [
             "core:default",
             "core:window:allow-close",

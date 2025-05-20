@@ -1,7 +1,7 @@
-use crate::serde::win32_bool;
-use crate::serde::win32_i32_tuple_struct::*;
-use crate::serde::win32_luid;
-use crate::serde::win32_rational;
+use crate::serde_types::win32_bool;
+use crate::serde_types::win32_i32_tuple_struct::*;
+use crate::serde_types::win32_luid;
+use crate::serde_types::win32_rational;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use windows::Win32::Devices::Display::*;
 use windows::Win32::Foundation::LUID as Win32LUID;

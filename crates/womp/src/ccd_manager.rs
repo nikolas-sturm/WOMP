@@ -1,4 +1,4 @@
-use crate::serde::Display;
+use crate::serde_types::Display;
 use itertools::Itertools;
 use windows::Win32::{Devices::Display::*, Foundation::*};
 
@@ -6,10 +6,11 @@ pub struct CCDWrapper {
     flags: QUERY_DISPLAY_CONFIG_FLAGS,
     paths: Vec<DISPLAYCONFIG_PATH_INFO>,
     modes: Vec<DISPLAYCONFIG_MODE_INFO>,
+    _debug: bool,
 }
 
 impl CCDWrapper {
-    pub fn new(active_only: bool) -> Self {
+    pub fn new(active_only: bool, debug: bool) -> Self {
         let flags = if active_only {
             QDC_ONLY_ACTIVE_PATHS
         } else {
@@ -21,29 +22,7 @@ impl CCDWrapper {
             flags,
             paths,
             modes,
-        }
-    }
-
-    fn _fix_scan_line_ordering(&mut self) {
-        // Really not sure why this happens but sometimes the ordering will be set to 255 when it should be 1
-        for mode in &mut self.modes {
-            if mode.infoType == DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE {
-                continue;
-            };
-
-            let current_order = unsafe {
-                mode.Anonymous
-                    .targetMode
-                    .targetVideoSignalInfo
-                    .scanLineOrdering
-            };
-
-            if current_order == DISPLAYCONFIG_SCANLINE_ORDERING(255) {
-                mode.Anonymous
-                    .targetMode
-                    .targetVideoSignalInfo
-                    .scanLineOrdering = DISPLAYCONFIG_SCANLINE_ORDERING(1);
-            }
+            _debug: debug,
         }
     }
 
@@ -95,8 +74,6 @@ impl CCDWrapper {
             self.modes
                 .resize_with(mode_count as usize, Default::default);
         }
-
-        //self.fix_scan_line_ordering();
 
         return Result::Ok(format!(
             "Successfully retrieved {path_count} Paths and {mode_count} Modes"
@@ -224,13 +201,13 @@ impl CCDWrapper {
         Ok(())
     }
 
-    pub fn apply_profile(&mut self, profile: &mut Vec<Display>) -> Result<(), String> {
+    pub fn apply_display_layout(&mut self, display_layout: &mut Vec<Display>) -> Result<(), String> {
         let current_config = match self.get_displays() {
             Ok(displays) => displays,
             Err(e) => panic!("Could not load current display config: {e}!"),
         };
 
-        if let Err(e) = self.adjust_adapter_ids(&current_config, profile) {
+        if let Err(e) = self.adjust_adapter_ids(&current_config, display_layout) {
             panic!("Could not adjust adapterIds: {e}!");
         }
 
@@ -240,7 +217,7 @@ impl CCDWrapper {
         let mut target_names = vec![];
         let mut adapter_names = vec![];
 
-        for d in profile {
+        for d in display_layout {
             let (path_info, target_mode_info, source_mode_info, target_name, adapter_name) =
                 d.to_windows_types();
             paths.push(path_info);

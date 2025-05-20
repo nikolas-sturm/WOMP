@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 interface NavigationStore {
-  selectedKey: string;
-  setSelectedKey: (key: string) => void;
+  selectedKey: string | null;
+  setSelectedKey: (key: string | null) => void;
 }
 
 export const useNavigationStore = create<NavigationStore>((set) => ({
-  selectedKey: "home",
-  setSelectedKey: (key: string) => set({ selectedKey: key }),
+  selectedKey: null,
+  setSelectedKey: (key: string | null) => set({ selectedKey: key }),
 }));

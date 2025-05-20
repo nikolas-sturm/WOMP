@@ -19,7 +19,8 @@ body {
   box-sizing: border-box;
 }
 
-button, .fui-Button {
+button,
+.fui-Button {
   cursor: default !important;
   min-width: 0 !important;
 }

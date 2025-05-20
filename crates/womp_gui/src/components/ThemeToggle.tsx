@@ -2,12 +2,14 @@ import { useThemeStore } from "@/lib/themeStore";
 import { Button, makeStyles } from "@fluentui/react-components";
 const useStyles = makeStyles({
   button: {
-    position: "fixed",
     textAlign: "center",
     verticalAlign: "middle",
     bottom: "5px",
     left: "5px",
     zIndex: 1000,
+    "&:hover": {
+      backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.1)",
+    },
   },
   buttonIcon: {
     position: "relative",
@@ -20,9 +22,15 @@ export function ThemeToggle() {
 
   const classes = useStyles();
 
-  return <Button 
+  return (
+    <Button
       onClick={toggleTheme}
-      className={classes.button} 
+      className={classes.button}
       appearance="subtle"
-    ><span className={classes.buttonIcon}>{activeTheme === "dark" ? "\uE706" : "\uE708"}</span></Button>;
+    >
+      <span className={classes.buttonIcon}>
+        {activeTheme === "dark" ? "\uE706" : "\uE708"}
+      </span>
+    </Button>
+  );
 }
