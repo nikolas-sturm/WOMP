@@ -1,14 +1,18 @@
+import { ProfileName } from "@/components/ProfileName";
 import { useProfileStore } from "@/lib/profileStore";
-import type { Profile, Run, Config } from "@/lib/types";
+import type { Config, Profile, Run } from "@/lib/types";
+import { useProfileEditorStyles } from "@/styles/profileEditor";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import {
   Button,
   Dialog,
+  DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
   DialogTitle,
+  DialogTrigger,
   Input,
   Label,
   Popover,
@@ -18,11 +22,9 @@ import {
   Textarea,
   mergeClasses,
 } from "@fluentui/react-components";
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
-import { ProfileName } from "@/components/ProfileName";
-import { invoke } from "@tauri-apps/api/core";
-import { useProfileEditorStyles } from "@/styles/profileEditor";
 
 type EmojiData = {
   fallback: string;
@@ -56,7 +58,7 @@ const useProfileEditorStore = create<ProfileEditorStore>((set) => ({
 
 export function ProfileEditor() {
   const styles = useProfileEditorStyles();
-  const { selectedProfile, initProfiles, setSelectedProfile } =
+  const { selectedProfile, initProfiles, updateProfiles, setSelectedProfile } =
     useProfileStore();
   const { tempProfile, setTempProfile } = useProfileEditorStore();
 
@@ -75,7 +77,7 @@ export function ProfileEditor() {
 
   const handleDeleteProfile = async () => {
     await invoke("delete_profile", { profileName: tempProfile?.name });
-    initProfiles();
+    updateProfiles();
     setDeleteDialogOpen(false);
     setSelectedProfile(null);
   };
@@ -90,7 +92,7 @@ export function ProfileEditor() {
     const new_profile_name: string = await invoke("clone_profile", {
       profileName: tempProfile?.name,
     });
-    const new_profiles = await initProfiles();
+    const new_profiles = await updateProfiles();
     setSelectedProfile(
       new_profiles.find((profile) => profile.name === new_profile_name) ?? null,
     );
@@ -118,7 +120,7 @@ export function ProfileEditor() {
         profileName: tempProfile.name,
       });
     }
-    const profiles = await initProfiles();
+    const profiles = await updateProfiles();
     if (nameChanged) {
       setSelectedProfile(
         profiles.find((profile) => profile.name === tempProfile.name) ?? null,
@@ -146,7 +148,7 @@ export function ProfileEditor() {
         profileName: tempProfile.name,
       });
     }
-    const profiles = await initProfiles();
+    const profiles = await updateProfiles();
     if (tempProfile && nameChanged) {
       setSelectedProfile(
         profiles.find((profile) => profile.name === tempProfile.name) ?? null,
@@ -322,13 +324,42 @@ export function ProfileEditor() {
               </Button>
             </div>
             <div className={styles.controlsSection}>
-              <Button
-                className={styles.controlButton}
-                appearance="subtle"
-                onClick={openDeleteDialog}
-              >
-                Delete
-              </Button>
+              <Dialog>
+                <DialogTrigger>
+                  <Button
+                    className={styles.controlButton}
+                    appearance="subtle"
+                  >
+                    Delete
+                  </Button>
+                </DialogTrigger>
+                <DialogSurface className={styles.deleteDialogSurface}>
+                  <DialogBody>
+                    <DialogTitle>Delete Profile</DialogTitle>
+                    <DialogContent className={styles.deleteDialogContent}>
+                      <Text>Are you sure you want to delete this profile?</Text>
+                    </DialogContent>
+                    <DialogActions>
+                      <DialogTrigger disableButtonEnhancement>
+                        <Button
+                          appearance="primary"
+                          onClick={handleDeleteProfile}
+                        >
+                          Delete
+                        </Button>
+                      </DialogTrigger>
+                      <DialogTrigger disableButtonEnhancement>
+                        <Button
+                          appearance="subtle"
+                          className={styles.controlButton}
+                        >
+                          Cancel
+                        </Button>
+                      </DialogTrigger>
+                    </DialogActions>
+                  </DialogBody>
+                </DialogSurface>
+              </Dialog>
               <Button
                 className={styles.saveButton}
                 appearance="primary"
@@ -342,41 +373,6 @@ export function ProfileEditor() {
       ) : (
         <Text>Select an profile from the navigation menu to get started.</Text>
       )}
-      <Dialog
-        open={deleteDialogOpen}
-        onOpenChange={(_, data) => setDeleteDialogOpen(data.open)}
-      >
-        <DialogSurface className={styles.deleteDialog}>
-          <DialogBody>
-            <DialogTitle className={styles.deleteDialogTitle}>
-              Delete Profile
-            </DialogTitle>
-            <DialogContent>
-              <div className={styles.deleteDialogContent}>
-                <div className={styles.deleteDialogDescription}>
-                  <Text>Are you sure you want to delete this profile?</Text>
-                </div>
-                <div className={styles.deleteDialogButtons}>
-                  <Button
-                    appearance="primary"
-                    className={styles.saveButton}
-                    onClick={handleDeleteProfile}
-                  >
-                    Delete
-                  </Button>
-                  <Button
-                    appearance="subtle"
-                    className={styles.controlButton}
-                    onClick={() => setDeleteDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
     </div>
   );
 };

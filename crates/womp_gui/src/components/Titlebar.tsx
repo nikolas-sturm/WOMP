@@ -1,9 +1,9 @@
+import { useTitlebarStyles } from "@/styles/titlebar";
 import { Button, mergeClasses } from "@fluentui/react-components";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useState } from "react";
-import { useTitlebarStyles } from "@/styles/titlebar";
 
-export function Titlebar() {
+export function Titlebar({ onlyClose = false }: { onlyClose?: boolean }) {
   const styles = useTitlebarStyles();
   const [isMaximized, setIsMaximized] = useState(false);
   const [windowTitle, setWindowTitle] = useState("WOMP");
@@ -33,6 +33,14 @@ export function Titlebar() {
     // Get window title
     appWindow.title().then((title: string) => {
       if (title) setWindowTitle(title);
+    });
+
+    appWindow.listen("event", (e) => {
+      if (e.payload === "title-changed") {
+        appWindow.title().then((title: string) => {
+          if (title) setWindowTitle(title);
+        });
+      }
     });
 
     // Cleanup listeners
@@ -67,7 +75,7 @@ export function Titlebar() {
   const handleClose = async () => {
     try {
       const appWindow = getCurrentWindow();
-      await appWindow.close();
+      await appWindow.hide();
     } catch (error) {
       console.error("Failed to close window:", error);
     }
@@ -80,22 +88,26 @@ export function Titlebar() {
         &nbsp;&nbsp;&nbsp;&nbsp;{windowTitle}
       </div>
       <div className={styles.windowControls}>
-        <Button
-          appearance="transparent"
-          aria-label="Minimize"
-          className={styles.controlButton}
-          onClick={handleMinimize}
-        >
-          &#xE921;
-        </Button>
-        <Button
-          appearance="transparent"
-          aria-label={isMaximized ? "Restore" : "Maximize"}
-          className={styles.controlButton}
-          onClick={handleMaximizeRestore}
-        >
-          {isMaximized ? "\uE923" : "\uE922"}
-        </Button>
+        {!onlyClose && (
+          <>
+            <Button
+              appearance="transparent"
+              aria-label="Minimize"
+              className={styles.controlButton}
+              onClick={handleMinimize}
+            >
+              &#xE921;
+            </Button>
+            <Button
+              appearance="transparent"
+              aria-label={isMaximized ? "Restore" : "Maximize"}
+              className={styles.controlButton}
+              onClick={handleMaximizeRestore}
+            >
+              {isMaximized ? "\uE923" : "\uE922"}
+            </Button>
+          </>
+        )}
         <Button
           appearance="transparent"
           aria-label="Close"

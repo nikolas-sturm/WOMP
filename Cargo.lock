@@ -402,6 +402,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
+name = "byteorder-lite"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
+
+[[package]]
 name = "bytes"
 version = "1.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -985,9 +991,9 @@ dependencies = [
 
 [[package]]
 name = "errno"
-version = "0.3.11"
+version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "976dd42dc7e85965fe702eb8164f21f450704bdde31faefd6471dba214cb594e"
+checksum = "cea14ef9355e3beab063703aa9dab15afd25f0667c341310c1e5274bb1d0da18"
 dependencies = [
  "libc",
  "windows-sys 0.59.0",
@@ -1633,7 +1639,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.61.0",
+ "windows-core",
 ]
 
 [[package]]
@@ -1766,6 +1772,18 @@ checksum = "3acae9609540aa318d1bc588455225fb2085b9ed0c4f6bd0d9d5bcd86f1a0344"
 dependencies = [
  "icu_normalizer",
  "icu_properties",
+]
+
+[[package]]
+name = "image"
+version = "0.25.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db35664ce6b9810857a38a906215e75a9c879f0696556a39f59c62829710251a"
+dependencies = [
+ "bytemuck",
+ "byteorder-lite",
+ "num-traits",
+ "png",
 ]
 
 [[package]]
@@ -3575,8 +3593,8 @@ dependencies = [
  "tao-macros",
  "unicode-segmentation",
  "url",
- "windows 0.61.1",
- "windows-core 0.61.0",
+ "windows",
+ "windows-core",
  "windows-version",
  "x11-dl",
 ]
@@ -3615,6 +3633,7 @@ dependencies = [
  "gtk",
  "heck 0.5.0",
  "http",
+ "image",
  "jni",
  "libc",
  "log",
@@ -3646,7 +3665,7 @@ dependencies = [
  "webkit2gtk",
  "webview2-com",
  "window-vibrancy",
- "windows 0.61.1",
+ "windows",
 ]
 
 [[package]]
@@ -3731,9 +3750,9 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-opener"
-version = "2.2.6"
+version = "2.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fdc6cb608e04b7d2b6d1f21e9444ad49245f6d03465ba53323d692d1ceb1a30"
+checksum = "66644b71a31ec1a8a52c4a16575edd28cf763c87cf4a7da24c884122b5c77097"
 dependencies = [
  "dunce",
  "glob",
@@ -3747,8 +3766,18 @@ dependencies = [
  "tauri-plugin",
  "thiserror 2.0.12",
  "url",
- "windows 0.60.0",
+ "windows",
  "zbus",
+]
+
+[[package]]
+name = "tauri-plugin-process"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57da5888533e802b6206b9685091f8714aa1f5266dc80051a82388449558b773"
+dependencies = [
+ "tauri",
+ "tauri-plugin",
 ]
 
 [[package]]
@@ -3770,7 +3799,7 @@ dependencies = [
  "tauri-utils",
  "thiserror 2.0.12",
  "url",
- "windows 0.61.1",
+ "windows",
 ]
 
 [[package]]
@@ -3796,7 +3825,7 @@ dependencies = [
  "url",
  "webkit2gtk",
  "webview2-com",
- "windows 0.61.1",
+ "windows",
  "wry",
 ]
 
@@ -4136,6 +4165,12 @@ name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
+
+[[package]]
+name = "ttf-parser"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
 name = "typeid"
@@ -4483,9 +4518,9 @@ checksum = "b542b5cfbd9618c46c2784e4d41ba218c336ac70d44c55e47b251033e7d85601"
 dependencies = [
  "webview2-com-macros",
  "webview2-com-sys",
- "windows 0.61.1",
- "windows-core 0.61.0",
- "windows-implement 0.60.0",
+ "windows",
+ "windows-core",
+ "windows-implement",
  "windows-interface",
 ]
 
@@ -4507,8 +4542,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ae2d11c4a686e4409659d7891791254cf9286d3cfe0eef54df1523533d22295"
 dependencies = [
  "thiserror 2.0.12",
- "windows 0.61.1",
- "windows-core 0.61.0",
+ "windows",
+ "windows-core",
 ]
 
 [[package]]
@@ -4565,37 +4600,15 @@ dependencies = [
 
 [[package]]
 name = "windows"
-version = "0.60.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddf874e74c7a99773e62b1c671427abf01a425e77c3d3fb9fb1e4883ea934529"
-dependencies = [
- "windows-collections 0.1.1",
- "windows-core 0.60.1",
- "windows-future 0.1.1",
- "windows-link",
- "windows-numerics 0.1.1",
-]
-
-[[package]]
-name = "windows"
 version = "0.61.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c5ee8f3d025738cb02bad7868bbb5f8a6327501e870bf51f1b455b0a2454a419"
 dependencies = [
- "windows-collections 0.2.0",
- "windows-core 0.61.0",
- "windows-future 0.2.0",
+ "windows-collections",
+ "windows-core",
+ "windows-future",
  "windows-link",
- "windows-numerics 0.2.0",
-]
-
-[[package]]
-name = "windows-collections"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5467f79cc1ba3f52ebb2ed41dbb459b8e7db636cc3429458d9a852e15bc24dec"
-dependencies = [
- "windows-core 0.60.1",
+ "windows-numerics",
 ]
 
 [[package]]
@@ -4604,20 +4617,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3beeceb5e5cfd9eb1d76b381630e82c4241ccd0d27f1a39ed41b2760b255c5e8"
 dependencies = [
- "windows-core 0.61.0",
-]
-
-[[package]]
-name = "windows-core"
-version = "0.60.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca21a92a9cae9bf4ccae5cf8368dce0837100ddf6e6d57936749e85f152f6247"
-dependencies = [
- "windows-implement 0.59.0",
- "windows-interface",
- "windows-link",
- "windows-result",
- "windows-strings 0.3.1",
+ "windows-core",
 ]
 
 [[package]]
@@ -4626,7 +4626,7 @@ version = "0.61.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4763c1de310c86d75a878046489e2e5ba02c649d185f21c67d4cf8a56d098980"
 dependencies = [
- "windows-implement 0.60.0",
+ "windows-implement",
  "windows-interface",
  "windows-link",
  "windows-result",
@@ -4635,33 +4635,12 @@ dependencies = [
 
 [[package]]
 name = "windows-future"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a787db4595e7eb80239b74ce8babfb1363d8e343ab072f2ffe901400c03349f0"
-dependencies = [
- "windows-core 0.60.1",
- "windows-link",
-]
-
-[[package]]
-name = "windows-future"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a1d6bbefcb7b60acd19828e1bc965da6fcf18a7e39490c5f8be71e54a19ba32"
 dependencies = [
- "windows-core 0.61.0",
+ "windows-core",
  "windows-link",
-]
-
-[[package]]
-name = "windows-implement"
-version = "0.59.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83577b051e2f49a058c308f17f273b570a6a758386fc291b5f6a934dd84e48c1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.101",
 ]
 
 [[package]]
@@ -4694,21 +4673,11 @@ checksum = "76840935b766e1b0a05c0066835fb9ec80071d4c09a16f6bd5f7e655e3c14c38"
 
 [[package]]
 name = "windows-numerics"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "005dea54e2f6499f2cee279b8f703b3cf3b5734a2d8d21867c8f44003182eeed"
-dependencies = [
- "windows-core 0.60.1",
- "windows-link",
-]
-
-[[package]]
-name = "windows-numerics"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9150af68066c4c5c07ddc0ce30421554771e528bde427614c61038bc2c92c2b1"
 dependencies = [
- "windows-core 0.61.0",
+ "windows-core",
  "windows-link",
 ]
 
@@ -5084,7 +5053,7 @@ dependencies = [
  "serde_json",
  "toml",
  "widestring",
- "windows 0.61.1",
+ "windows",
 ]
 
 [[package]]
@@ -5099,14 +5068,17 @@ dependencies = [
 name = "womp_gui"
 version = "0.1.0"
 dependencies = [
+ "png",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
+ "tauri-plugin-process",
  "toml",
+ "ttf-parser",
  "window-vibrancy",
- "windows 0.61.1",
+ "windows",
  "womp",
 ]
 
@@ -5154,8 +5126,8 @@ dependencies = [
  "webkit2gtk",
  "webkit2gtk-sys",
  "webview2-com",
- "windows 0.61.1",
- "windows-core 0.61.0",
+ "windows",
+ "windows-core",
  "windows-version",
  "x11-dl",
 ]
@@ -5207,9 +5179,9 @@ dependencies = [
 
 [[package]]
 name = "zbus"
-version = "5.7.0"
+version = "5.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88232b74ba057a0c85472ec1bae8a17569960be17da2d5e5ad30d5efe7ea6719"
+checksum = "d3a7c7cee313d044fca3f48fa782cb750c79e4ca76ba7bc7718cd4024cdf6f68"
 dependencies = [
  "async-broadcast",
  "async-executor",
@@ -5240,9 +5212,9 @@ dependencies = [
 
 [[package]]
 name = "zbus_macros"
-version = "5.7.0"
+version = "5.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6969c06899233334676e60da1675740539cf034ee472a6c5b5c54e50a0a554c9"
+checksum = "a17e7e5eec1550f747e71a058df81a9a83813ba0f6a95f39c4e218bdc7ba366a"
 dependencies = [
  "proc-macro-crate 3.3.0",
  "proc-macro2",

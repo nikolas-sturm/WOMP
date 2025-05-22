@@ -44,5 +44,9 @@ export function buildTheme(
     colorBrandBackgroundSelected: dark
       ? d(systemColors.accent_light_2, 0.2)
       : d(systemColors.accent_dark_3, 0.2),
+    colorBrandForeground1: systemColors.accent_light_2,
+    colorCompoundBrandStroke: systemColors.accent_light_2,
+    colorCompoundBrandStrokeHover: l(systemColors.accent_light_2, 0.1),
+    colorCompoundBrandStrokePressed: d(systemColors.accent_light_2, 0.3),
   };
 }

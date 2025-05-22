@@ -1,27 +1,28 @@
 import { Icon } from "@/components/DynamicIcon";
 import { useProfileStore } from "@/lib/profileStore";
+import { useNavigationViewStyles } from "@/styles/navigationView";
 import {
   Button,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  DialogTrigger,
   Input,
+  Label,
   Tab,
   TabList,
   mergeClasses,
   useId,
-  Dialog,
-  DialogBody,
-  DialogTitle,
-  DialogTrigger,
-  DialogContent,
-  DialogSurface,
-  DialogActions,
-  Label,
   type DialogOpenChangeData,
   type DialogOpenChangeEvent,
 } from "@fluentui/react-components";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ProfileName } from "./ProfileName";
 import { invoke } from "@tauri-apps/api/core";
-import { useNavigationViewStyles } from "@/styles/navigationView";
+import { useCallback, useEffect, useRef, useState } from "react";
+import sanitize from "sanitize-filename";
+import { ProfileName } from "./ProfileName";
 
 export const NavigationView = () => {
   const styles = useNavigationViewStyles();
@@ -30,7 +31,7 @@ export const NavigationView = () => {
   const [searchInput, setSearchInput] = useState("");
   const [shouldFocusSearch, setShouldFocusSearch] = useState(false);
   const [saveDialogInput, setSaveDialogInput] = useState("");
-  const { profiles, selectedProfile, setSelectedProfile, initProfiles } =
+  const { profiles, selectedProfile, setSelectedProfile, updateProfiles } =
     useProfileStore();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [profileExistsDialogOpen, setProfileExistsDialogOpen] = useState(false);
@@ -41,14 +42,14 @@ export const NavigationView = () => {
     searchInput.trim() === ""
       ? profiles
       : profiles.filter(
-          (profile) =>
-            profile.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-            (profile.config?.name
-              ? profile.config.name
-                  .toLowerCase()
-                  .includes(searchInput.toLowerCase())
-              : false),
-        );
+        (profile) =>
+          profile.name.toLowerCase().includes(searchInput.toLowerCase()) ||
+          (profile.config?.name
+            ? profile.config.name
+              .toLowerCase()
+              .includes(searchInput.toLowerCase())
+            : false),
+      );
 
   const toggleExpanded = useCallback(() => {
     setIsExpanded(!isExpanded);
@@ -73,12 +74,15 @@ export const NavigationView = () => {
   }, []);
 
   const refreshProfiles = useCallback(() => {
-    initProfiles();
-  }, [initProfiles]);
+    updateProfiles();
+  }, [updateProfiles]);
 
   const handleSaveCurrentProfile = useCallback(
     async (profileName: string, overwrite: boolean = false) => {
-      const cleanedProfileName = profileName.replace(/\W/g, "_").toLowerCase();
+      const cleanedProfileName = sanitize(profileName.toLowerCase().replace(/-/g, "_"));
+      if (cleanedProfileName.length === 0) {
+        return;
+      }
       // Check if the profile already exists ask if they want to overwrite
       const profileExists = profiles.find(
         (profile) => profile.name === cleanedProfileName,
@@ -90,12 +94,14 @@ export const NavigationView = () => {
       await invoke("save_current_display_layout", {
         profileName: cleanedProfileName,
       });
-      const newProfiles = await initProfiles();
+      const newProfiles = await updateProfiles();
       setSelectedProfile(
         newProfiles.find((profile) => profile.name === profileName) ?? null,
       );
+      setSaveDialogInput("");
+      setSaveDialogOpen(false);
     },
-    [initProfiles, setSelectedProfile],
+    [profiles, updateProfiles, setSelectedProfile],
   );
 
   const handleProfileExistsDialogOpenChange = useCallback(
@@ -147,8 +153,6 @@ export const NavigationView = () => {
                 <Button
                   appearance="subtle"
                   className={styles.headerButton}
-                  aria-expanded={isExpanded}
-                  aria-controls={titleId}
                 >
                   <span className={styles.headerButtonIcon}>&#xE710;</span>
                 </Button>
@@ -162,6 +166,11 @@ export const NavigationView = () => {
                       className={styles.input}
                       placeholder="some_profile_name"
                       value={saveDialogInput}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleSaveCurrentProfile(saveDialogInput);
+                        }
+                      }}
                       onChange={(_, data) => setSaveDialogInput(data.value)}
                     />
                   </DialogContent>

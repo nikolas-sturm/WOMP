@@ -1,9 +1,9 @@
 import App from "@/App";
+import Dialog from "@/Dialog";
 import { useThemeStore } from "@/lib/themeStore";
 import { FluentProvider, makeStyles } from "@fluentui/react-components";
 import React, { useEffect } from "react";
 import ReactDOM from "react-dom/client";
-
 const useStyles = makeStyles({
   center: {
     padding: "20px",
@@ -13,6 +13,9 @@ const useStyles = makeStyles({
     height: "100vh",
   },
 });
+
+const searchParams = new URLSearchParams(window.location.search);
+const view = searchParams.get("view");
 
 function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { getActiveTheme, initThemes, error, initialized } = useThemeStore();
@@ -40,11 +43,10 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
   return <FluentProvider theme={theme}>{children}</FluentProvider>;
 }
 
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
-      <App />
+      {view === "main" ? <App /> : <Dialog />}
     </ThemeProvider>
   </React.StrictMode>
 );

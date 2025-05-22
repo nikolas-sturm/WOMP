@@ -7,7 +7,6 @@ use windows::Foundation::TypedEventHandler;
 use windows::UI::ViewManagement::{UIColorType, UISettings};
 
 pub mod external;
-pub mod tray;
 
 // Store everything related to color change detection
 struct ColorChangeHandler {
@@ -29,13 +28,14 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
-            let _tray = tray::create_tray(app);
-
             let main_window = WebviewWindowBuilder::new(
                 app,
                 "main",
-                tauri::WebviewUrl::External(tauri::Url::parse("http://localhost:1420").unwrap()),
+                tauri::WebviewUrl::External(
+                    tauri::Url::parse("http://localhost:1420/?view=main").unwrap(),
+                ),
             )
             .title("WOMP Config UI")
             .inner_size(800.0, 600.0)
@@ -47,18 +47,36 @@ pub fn run() {
             .build()
             .unwrap();
 
+            let dialog_window = WebviewWindowBuilder::new(
+                app,
+                "dialog",
+                tauri::WebviewUrl::External(
+                    tauri::Url::parse("http://localhost:1420/?view=dialog").unwrap(),
+                ),
+            )
+            .title("Dialog")
+            .inner_size(320.0, 174.0)
+            .min_inner_size(320.0, 174.0)
+            .center()
+            .resizable(false)
+            .decorations(false)
+            .transparent(true)
+            .visible(false)
+            .build()
+            .unwrap();
+
             apply_mica(&main_window, None).expect("Failed to apply mica");
-            main_window.show().expect("Failed to show main window");
+            apply_mica(&dialog_window, None).expect("Failed to apply mica");
 
             // Set up color change listener
             setup_color_change_listener(app.app_handle().clone());
 
             Ok(())
         })
-        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             change_theme,
             get_system_colors,
+            emit_to_window,
             external::apply_display_layout,
             external::save_current_display_layout,
             external::get_profiles,
@@ -72,6 +90,7 @@ pub fn run() {
             external::clone_profile,
             external::open_profile_dir,
         ])
+        .plugin(tauri_plugin_opener::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -140,4 +159,10 @@ fn get_system_colors() -> [String; 9] {
     }
 
     result
+}
+
+#[tauri::command]
+fn emit_to_window(handle: AppHandle, window_name: &str, event: &str, payload: &str) {
+    let window = handle.get_webview_window(window_name).unwrap();
+    window.emit(event, payload).unwrap();
 }

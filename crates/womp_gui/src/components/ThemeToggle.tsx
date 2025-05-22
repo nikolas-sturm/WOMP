@@ -1,36 +1,43 @@
 import { useThemeStore } from "@/lib/themeStore";
-import { Button, makeStyles } from "@fluentui/react-components";
+import { makeStyles, Select, SelectOnChangeData } from "@fluentui/react-components";
+import React from "react";
+
 const useStyles = makeStyles({
-  button: {
-    textAlign: "center",
-    verticalAlign: "middle",
-    bottom: "5px",
-    left: "5px",
-    zIndex: 1000,
-    "&:hover": {
-      backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.1)",
+  select: {
+    minWidth: "100px",
+    "& > select": {
+      backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.05)",
     },
   },
-  buttonIcon: {
-    position: "relative",
-    top: "2px",
+  option: {
+    backgroundColor: "var(--colorNeutralBackground1)",
+    color: "var(--colorNeutralForeground1)",
+    "&:hover": {
+      backgroundColor: "var(--colorNeutralBackground2)",
+    },
   },
 });
 
 export function ThemeToggle() {
-  const { activeTheme, toggleTheme } = useThemeStore();
+  const { activeTheme, setTheme } = useThemeStore();
 
   const classes = useStyles();
 
+  const handleThemeChange = (_: React.FormEvent<HTMLElement>, data: SelectOnChangeData) => {
+    if (data.value) {
+      setTheme(data.value as "light" | "dark");
+    }
+  };
+
   return (
-    <Button
-      onClick={toggleTheme}
-      className={classes.button}
-      appearance="subtle"
+    <Select
+      value={activeTheme}
+      appearance="filled-lighter"
+      onChange={handleThemeChange}
+      className={classes.select}
     >
-      <span className={classes.buttonIcon}>
-        {activeTheme === "dark" ? "\uE706" : "\uE708"}
-      </span>
-    </Button>
+      <option value="light" className={classes.option}>Light</option>
+      <option value="dark" className={classes.option}>Dark</option>
+    </Select>
   );
 }

@@ -1,0 +1,201 @@
+import {
+  Button,
+  Card,
+  CardHeader,
+  makeStyles,
+  mergeClasses,
+  Text,
+  tokens,
+} from '@fluentui/react-components';
+import { ChevronUpRegular } from '@fluentui/react-icons';
+import React, { ReactNode, useState } from 'react';
+import { Icon } from './DynamicIcon';
+
+interface SettingsCardProps {
+  /** Optional icon to display on the left of the header. Recommended size: 24x24 or 32x32. */
+  icon?: string;
+  /** The main title text for the card. */
+  header: string;
+  /** Optional description text displayed below the header. */
+  description?: string;
+  /** Optional control element (e.g., Switch, Dropdown, Button group) to display on the right side of the header row. */
+  control?: ReactNode;
+  /** Determines if the card has an expandable section. Defaults to false. */
+  expandable?: boolean;
+  /** If expandable, determines if the card is initially expanded. Defaults to false. */
+  initiallyExpanded?: boolean;
+  /** Content to display in the expandable section of the card. Only shown if `expandable` is true and the card is expanded. */
+  children?: ReactNode;
+  /** Callback function triggered when the card's expansion state changes. */
+  onExpandedChange?: (isExpanded: boolean) => void;
+}
+
+const useStyles = makeStyles({
+  card: {
+    width: '100%',
+    // Example: maxWidth: '700px', // Adjust as needed
+    backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.05)",
+    boxShadow: "none",
+    border: "1px solid var(--colorNeutralShadowKey)",
+    borderRadius: tokens.borderRadiusLarge,
+    padding: 0,
+    gap: 0,
+    overflow: 'hidden', // Add overflow hidden to contain animations
+  },
+  cardHeader: {
+    padding: tokens.spacingHorizontalL,
+    cursor: "default !important",
+    "&:hover": {
+      backgroundColor: "var(--hoverBackground)",
+    },
+  },
+  // Styles for the main row of the card header, containing icon, text, and actions
+  headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+  },
+  headerTextContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1,
+  },
+  headerActionContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS, // 8px gap between control and expand button
+  },
+  // Styles for the content area that appears when the card is expanded
+  expandedContent: {
+    "&:hover": {
+      backgroundColor: "var(--hoverBackground)",
+    },
+    padding: 0,
+    borderTop: "1px solid var(--colorNeutralBackground1)",
+    transition: 'max-height 0.3s ease',
+    maxHeight: '1000px',
+    overflow: 'hidden',
+  },
+  collapsedContent: {
+    maxHeight: '0',
+    padding: 0,
+    overflow: 'hidden',
+    borderTop: "1px solid var(--colorNeutralBackground1)",
+    transition: 'max-height 0.3s ease',
+  },
+  contentWrapper: {
+    padding: tokens.spacingHorizontalL,
+    transition: 'transform 0.3s ease, opacity 0.3s ease',
+  },
+  icon: {
+    marginRight: tokens.spacingHorizontalL,
+    fontSize: tokens.fontSizeBase500,
+  },
+  chevronIcon: {
+    transition: 'transform 0.2s ease',
+  },
+  rotated: {
+    transform: 'rotate(-180deg)',
+  },
+});
+
+export const SettingsCard: React.FC<SettingsCardProps> = ({
+  icon,
+  header,
+  description,
+  control,
+  expandable = false,
+  initiallyExpanded = false,
+  children,
+  onExpandedChange,
+}) => {
+  const styles = useStyles();
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded && expandable);
+
+  const handleToggleExpand = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation(); // Prevent card click if header itself is clickable
+    if (expandable) {
+      const newExpandedState = !isExpanded;
+      setIsExpanded(newExpandedState);
+      if (onExpandedChange) {
+        onExpandedChange(newExpandedState);
+      }
+    }
+  };
+
+  const hoverBackground = expandable ? "rgb(from var(--colorNeutralForeground1) r g b / 0.05)" : undefined;
+
+  // Custom rendering for the CardHeader's 'header' prop to include the icon correctly
+  const renderedCardHeaderContent = (
+    <div className={styles.headerRow}>
+      {icon && <Icon icon={icon} className={styles.icon} />}
+      <div className={styles.headerTextContent}>
+        <Text size={300}>{header}</Text>
+        {description && (
+          <Text size={200} style={{ color: tokens.colorNeutralForeground2 }}>
+            {description}
+          </Text>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderedCardHeaderAction = (
+    <div className={styles.headerActionContainer}>
+      {control}
+      {expandable && (
+        <Button
+          appearance="transparent"
+          icon={
+            <ChevronUpRegular
+              className={mergeClasses(
+                styles.chevronIcon,
+                !isExpanded && styles.rotated
+              )}
+            />
+          }
+          onClick={handleToggleExpand}
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? `Collapse ${header}` : `Expand ${header}`}
+        />
+      )}
+    </div>
+  );
+
+  return (
+    <Card className={styles.card} style={{ '--hoverBackground': hoverBackground } as React.CSSProperties}>
+      <CardHeader
+        className={styles.cardHeader}
+        header={renderedCardHeaderContent}
+        action={renderedCardHeaderAction}
+        onClick={expandable ? handleToggleExpand : undefined}
+        style={expandable ? { cursor: 'pointer' } : {}}
+      />
+      {expandable && (
+        <div
+          className={mergeClasses(
+            isExpanded ? styles.expandedContent : styles.collapsedContent
+          )}
+          style={{
+            maxHeight: isExpanded ? '1000px' : '0',
+            transition: 'max-height 0.3s ease'
+          }}
+        >
+          <div
+            className={styles.contentWrapper}
+            style={{
+              paddingLeft: icon
+                ? `calc(${tokens.spacingHorizontalL} + 24px + ${tokens.spacingHorizontalM})`
+                : tokens.spacingHorizontalL,
+              opacity: isExpanded ? 1 : 0,
+              transform: isExpanded ? 'translateY(0)' : 'translateY(-20px)',
+              transition: 'transform 0.3s ease, opacity 0.3s ease'
+            }}
+          >
+            {children}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+};

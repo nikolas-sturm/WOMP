@@ -18,14 +18,18 @@ pub fn get_profiles_dir() -> Result<PathBuf, String> {
     Ok(profiles_dir)
 }
 
-pub fn get_profiles_and_configs() -> Result<Vec<(String, Config)>, String> {
+pub fn get_profiles_and_configs() -> Result<Vec<(String, Option<Config>)>, String> {
     let profiles_dir = get_profiles_dir().unwrap();
     let mut profiles = Vec::new();
     for entry in std::fs::read_dir(profiles_dir).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
         let profile_name = path.file_name().unwrap().to_str().unwrap().to_string();
-        profiles.push((profile_name.clone(), read_display_config(&profile_name).unwrap()));
+        let config = match read_display_config(&profile_name) {
+            Ok(c) => Some(c),
+            Err(_) => None,
+        };
+        profiles.push((profile_name.clone(), config));
     }
     Ok(profiles)
 }

@@ -1,146 +1,146 @@
 {
-  "folders": [
-    {
-      "path": ".",
-      "name": "WOMP"
+    "folders": [
+        {
+            "path": ".",
+            "name": "WOMP"
+        },
+        {
+            "path": "../../AppData/Roaming/WOMP",
+            "name": "Config"
+        }
+    ],
+    "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit",
+            "source.organizeImports": "explicit"
+        },
+        "biome.enabled": false,
+        "files.exclude": {
+            "**/.git": true,
+            "**/.svn": true,
+            "**/.hg": true,
+            "**/CVS": true,
+            "**/.DS_Store": true,
+            "**/Thumbs.db": true,
+            "**/target": true,
+            "**/dist": true,
+            "**/Cargo.lock": true,
+            "**/vite-env.d.ts": true,
+            "**/package-lock.json": true,
+            "**/node_modules": true
+        },
+        "[typescript]": {
+            "editor.tabSize": 2,
+            "editor.defaultFormatter": "vscode.typescript-language-features",
+            "editor.codeActionsOnSave": {
+                "quickfix.biome": "explicit",
+            },
+        },
+        "[typescriptreact]": {
+            "editor.tabSize": 2,
+            "editor.defaultFormatter": "vscode.typescript-language-features",
+            "editor.codeActionsOnSave": {
+                "quickfix.biome": "explicit",
+            },
+        },
+        "[css]": {
+            "editor.defaultFormatter": "biomejs.biome",
+            "editor.codeActionsOnSave": {
+                "quickfix.biome": "explicit",
+            },
+        },
+        "[json]": {
+            "editor.defaultFormatter": "vscode.json-language-features"
+        },
     },
-    {
-      "path": "../../AppData/Roaming/WOMP",
-      "name": "Config"
+    "extensions": {
+        "recommendations": [
+            "rust-lang.rust-analyzer",
+            "vadimcn.vscode-lldb",
+            "fill-labs.dependi",
+            "tamasfe.even-better-toml",
+            "biomejs.biome",
+        ]
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "type": "lldb",
+                "request": "launch",
+                "name": "Debug executable 'womp_lib'",
+                "cargo": {
+                    "args": [
+                        "build",
+                        "--bin=womp_lib",
+                        "--package=womp_lib"
+                    ],
+                    "filter": {
+                        "name": "womp_lib",
+                        "kind": "bin"
+                    }
+                },
+                "args": [],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "type": "lldb",
+                "request": "launch",
+                "name": "Debug unit tests in executable 'womp_lib'",
+                "cargo": {
+                    "args": [
+                        "test",
+                        "--no-run",
+                        "--bin=womp_lib",
+                        "--package=womp_lib"
+                    ],
+                    "filter": {
+                        "name": "womp_lib",
+                        "kind": "bin"
+                    }
+                },
+                "args": [],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "type": "lldb",
+                "request": "launch",
+                "name": "Debug executable 'womp_cli'",
+                "cargo": {
+                    "args": [
+                        "build",
+                        "--bin=womp_cli",
+                        "--package=womp_cli"
+                    ],
+                    "filter": {
+                        "name": "womp_cli",
+                        "kind": "bin"
+                    }
+                },
+                "args": [],
+                "cwd": "${workspaceFolder}"
+            },
+            {
+                "type": "lldb",
+                "request": "launch",
+                "name": "Debug unit tests in executable 'womp_cli'",
+                "cargo": {
+                    "args": [
+                        "test",
+                        "--no-run",
+                        "--bin=womp_cli",
+                        "--package=womp_cli"
+                    ],
+                    "filter": {
+                        "name": "womp_cli",
+                        "kind": "bin"
+                    }
+                },
+                "args": [],
+                "cwd": "${workspaceFolder}"
+            }
+        ]
     }
-  ],
-  "settings": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "rust-lang.rust-analyzer",
-    "editor.codeActionsOnSave": {
-      "source.fixAll": "explicit",
-      "source.organizeImports": "explicit"
-    },
-    "biome.enabled": false,
-    "files.exclude": {
-      "**/.git": true,
-      "**/.svn": true,
-      "**/.hg": true,
-      "**/CVS": true,
-      "**/.DS_Store": true,
-      "**/Thumbs.db": true,
-      "**/target": true,
-      "**/dist": true,
-      "**/Cargo.lock": true,
-      "**/vite-env.d.ts": true,
-      "**/package-lock.json": true,
-      "**/node_modules": true
-    },
-    "[typescript]": {
-      "editor.tabSize": 2,
-      "editor.defaultFormatter": "biomejs.biome",
-      "editor.codeActionsOnSave": {
-        "quickfix.biome": "explicit",
-      },
-    },
-    "[typescriptreact]": {
-      "editor.tabSize": 2,
-      "editor.defaultFormatter": "biomejs.biome",
-      "editor.codeActionsOnSave": {
-        "quickfix.biome": "explicit",
-      },
-    },
-    "[css]": {
-      "editor.defaultFormatter": "biomejs.biome",
-      "editor.codeActionsOnSave": {
-        "quickfix.biome": "explicit",
-      },
-    },
-    "[json]": {
-      "editor.defaultFormatter": "biomejs.biome"
-    },
-  },
-  "extensions": {
-    "recommendations": [
-      "rust-lang.rust-analyzer",
-      "vadimcn.vscode-lldb",
-      "fill-labs.dependi",
-      "tamasfe.even-better-toml",
-      "biomejs.biome",
-    ]
-  },
-  "launch": {
-    "version": "0.2.0",
-    "configurations": [
-      {
-        "type": "lldb",
-        "request": "launch",
-        "name": "Debug executable 'womp_lib'",
-        "cargo": {
-          "args": [
-            "build",
-            "--bin=womp_lib",
-            "--package=womp_lib"
-          ],
-          "filter": {
-            "name": "womp_lib",
-            "kind": "bin"
-          }
-        },
-        "args": [],
-        "cwd": "${workspaceFolder}"
-      },
-      {
-        "type": "lldb",
-        "request": "launch",
-        "name": "Debug unit tests in executable 'womp_lib'",
-        "cargo": {
-          "args": [
-            "test",
-            "--no-run",
-            "--bin=womp_lib",
-            "--package=womp_lib"
-          ],
-          "filter": {
-            "name": "womp_lib",
-            "kind": "bin"
-          }
-        },
-        "args": [],
-        "cwd": "${workspaceFolder}"
-      },
-      {
-        "type": "lldb",
-        "request": "launch",
-        "name": "Debug executable 'womp_cli'",
-        "cargo": {
-          "args": [
-            "build",
-            "--bin=womp_cli",
-            "--package=womp_cli"
-          ],
-          "filter": {
-            "name": "womp_cli",
-            "kind": "bin"
-          }
-        },
-        "args": [],
-        "cwd": "${workspaceFolder}"
-      },
-      {
-        "type": "lldb",
-        "request": "launch",
-        "name": "Debug unit tests in executable 'womp_cli'",
-        "cargo": {
-          "args": [
-            "test",
-            "--no-run",
-            "--bin=womp_cli",
-            "--package=womp_cli"
-          ],
-          "filter": {
-            "name": "womp_cli",
-            "kind": "bin"
-          }
-        },
-        "args": [],
-        "cwd": "${workspaceFolder}"
-      }
-    ]
-  }
 }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use womp::serde_types::config::Config;
 use tauri::command;
+use womp::serde_types::config::Config;
 
 #[derive(Serialize, Deserialize)]
 pub struct Profile {
@@ -11,7 +11,10 @@ pub struct Profile {
 #[command]
 pub fn get_profiles() -> Result<Vec<Profile>, String> {
     let profiles = womp::config_manager::get_profiles_and_configs().unwrap();
-    let profiles = profiles.into_iter().map(|(name, config)| Profile { name, config: Some(config) }).collect();
+    let profiles = profiles
+        .into_iter()
+        .map(|(name, config)| Profile { name, config })
+        .collect();
     Ok(profiles)
 }
 

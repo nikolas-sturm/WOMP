@@ -124,33 +124,12 @@ export const useProfileEditorStyles = makeStyles({
       color: tokens.colorNeutralForegroundInverted,
     },
   },
-  deleteDialog: {
-    width: "fit-content",
-    border: "1px solid var(--colorNeutralStrokeAlpha)",
-    borderRadius: tokens.borderRadiusLarge,
-    padding: 0,
-  },
   deleteDialogContent: {
     display: "flex",
     flexDirection: "column",
+    gap: tokens.spacingVerticalS,
   },
-  deleteDialogButtons: {
-    display: "flex",
-    flexDirection: "row",
-    backgroundColor: "var(--colorNeutralBackground2)",
-    borderBottomLeftRadius: tokens.borderRadiusLarge,
-    borderBottomRightRadius: tokens.borderRadiusLarge,
-    gap: tokens.spacingHorizontalS,
-    padding: tokens.spacingVerticalXL,
-  },
-  deleteDialogTitle: {
-    paddingTop: tokens.spacingVerticalXL,
-    paddingLeft: tokens.spacingHorizontalXL,
-    paddingRight: tokens.spacingHorizontalXL,
-  },
-  deleteDialogDescription: {
-    paddingLeft: tokens.spacingVerticalXL,
-    paddingRight: tokens.spacingVerticalXL,
-    paddingBottom: tokens.spacingVerticalXL,
+  deleteDialogSurface: {
+    width: "fit-content",
   },
 });

@@ -1,4 +1,4 @@
-import { makeStyles } from "@fluentui/react-components";
+import { makeStyles, mergeClasses } from "@fluentui/react-components";
 
 const useStyles = makeStyles({
   fluentIcon: {
@@ -6,7 +6,7 @@ const useStyles = makeStyles({
   },
 });
 
-export const Icon = ({ icon }: { icon: string }) => {
+export const Icon = ({ icon, className }: { icon: string, className?: string }) => {
   const charCode = icon.charCodeAt(0);
 
   const styles = useStyles();
@@ -43,8 +43,8 @@ export const Icon = ({ icon }: { icon: string }) => {
       (range) => charCode >= range.start && charCode <= range.end,
     )
   ) {
-    return <span className={styles.fluentIcon}>{icon}</span>;
+    return <span className={mergeClasses(styles.fluentIcon, className)}>{icon}</span>;
   }
 
-  return <span>{icon}</span>;
+  return <span className={className}>{icon}</span>;
 };
