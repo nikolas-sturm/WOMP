@@ -27,6 +27,8 @@ import { ProfileName } from "./ProfileName";
 export const NavigationView = () => {
   const styles = useNavigationViewStyles();
   const [isExpanded, setIsExpanded] = useState(true);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [isOverlayMode, setIsOverlayMode] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchInput, setSearchInput] = useState("");
   const [shouldFocusSearch, setShouldFocusSearch] = useState(false);
@@ -36,8 +38,8 @@ export const NavigationView = () => {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [profileExistsDialogOpen, setProfileExistsDialogOpen] = useState(false);
   const overwriteConfirmedRef = useRef(false);
+  const userExpandedRef = useRef(false);
 
-  // Filter profiles based on search input
   const filteredProfiles =
     searchInput.trim() === ""
       ? profiles
@@ -51,8 +53,36 @@ export const NavigationView = () => {
             : false),
       );
 
+  useEffect(() => {
+    const handleResize = () => {
+      const newWidth = window.innerWidth;
+      setWindowWidth(newWidth);
+
+      if (newWidth < 1000) {
+        if (!userExpandedRef.current) {
+          setIsExpanded(false);
+        }
+        setIsOverlayMode(true);
+      } else {
+        setIsOverlayMode(false);
+        if (!userExpandedRef.current) {
+          setIsExpanded(true);
+        }
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   const toggleExpanded = useCallback(() => {
-    setIsExpanded(!isExpanded);
+    const newExpandedState = !isExpanded;
+    userExpandedRef.current = !newExpandedState;
+    setIsExpanded(newExpandedState);
   }, [isExpanded]);
 
   const handleTabSelect = useCallback(
@@ -64,8 +94,11 @@ export const NavigationView = () => {
           profiles.find((profile) => profile.name === key) ?? null,
         );
       }
+      if (windowWidth < 1000 && isOverlayMode) {
+        setIsExpanded(false);
+      }
     },
-    [profiles, setSelectedProfile],
+    [profiles, setSelectedProfile, windowWidth, isOverlayMode],
   );
 
   const handleSearch = useCallback(() => {
@@ -83,7 +116,6 @@ export const NavigationView = () => {
       if (cleanedProfileName.length === 0) {
         return;
       }
-      // Check if the profile already exists ask if they want to overwrite
       const profileExists = profiles.find(
         (profile) => profile.name === cleanedProfileName,
       );
@@ -107,11 +139,9 @@ export const NavigationView = () => {
   const handleProfileExistsDialogOpenChange = useCallback(
     (_: DialogOpenChangeEvent, data: DialogOpenChangeData) => {
       setProfileExistsDialogOpen(data.open);
-      // open save dialog if the profile exists dialog is closed NOT by clicking save button
       if (!data.open && !overwriteConfirmedRef.current) {
         setSaveDialogOpen(true);
       }
-      // Reset the ref for next time
       if (!data.open) {
         overwriteConfirmedRef.current = false;
       }
@@ -119,7 +149,6 @@ export const NavigationView = () => {
     [],
   );
 
-  // Effect to focus search input after expansion
   useEffect(() => {
     if (isExpanded && shouldFocusSearch && searchInputRef.current) {
       searchInputRef.current.focus();
@@ -127,181 +156,216 @@ export const NavigationView = () => {
     }
   }, [isExpanded, shouldFocusSearch]);
 
-  const paneClassName = isExpanded ? styles.expanded : styles.collapsed;
+  let paneClassName = "";
+  switch (true) {
+    case isExpanded && isOverlayMode:
+      paneClassName = mergeClasses(styles.expanded, styles.overlayExpanded, styles.overlay);
+      break;
+    case !isExpanded && isOverlayMode:
+      paneClassName = mergeClasses(styles.collapsed, styles.overlay);
+      break;
+    case isExpanded:
+      paneClassName = styles.expanded;
+      break;
+    default:
+      paneClassName = styles.collapsed;
+  }
+
+  useEffect(() => {
+    if (!isOverlayMode || !isExpanded) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      const navEl = document.querySelector(`.${styles.navPane}`);
+      if (navEl && !navEl.contains(target)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOverlayMode, isExpanded, styles.navPane]);
 
   const titleId = useId("nav-title");
 
   return (
-    <div className={`${styles.navPane} ${paneClassName}`}>
-      <div className={styles.header}>
-        <Button
-          appearance="subtle"
-          className={styles.headerButton}
-          onClick={toggleExpanded}
-          aria-expanded={isExpanded}
-          aria-controls={titleId}
-        >
-          <span className={styles.headerButtonIcon}>&#xE700;</span>
-        </Button>
-        {isExpanded && (
-          <>
-            <Dialog
-              open={saveDialogOpen}
-              onOpenChange={(_, data) => setSaveDialogOpen(data.open)}
-            >
-              <DialogTrigger disableButtonEnhancement>
-                <Button
-                  appearance="subtle"
-                  className={styles.headerButton}
-                >
-                  <span className={styles.headerButtonIcon}>&#xE710;</span>
-                </Button>
-              </DialogTrigger>
-              <DialogSurface className={styles.saveDialogSurface}>
-                <DialogBody>
-                  <DialogTitle>Save Current Profile</DialogTitle>
-                  <DialogContent className={styles.saveDialogContent}>
-                    <Label>Folder Name</Label>
-                    <Input
-                      className={styles.input}
-                      placeholder="some_profile_name"
-                      value={saveDialogInput}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleSaveCurrentProfile(saveDialogInput);
-                        }
-                      }}
-                      onChange={(_, data) => setSaveDialogInput(data.value)}
-                    />
-                  </DialogContent>
-                  <DialogActions>
-                    <DialogTrigger disableButtonEnhancement>
-                      <Button
-                        appearance="subtle"
-                        className={styles.controlButton}
-                      >
-                        Cancel
-                      </Button>
-                    </DialogTrigger>
-                    <DialogTrigger disableButtonEnhancement>
-                      <Button
-                        appearance="primary"
-                        onClick={() =>
-                          handleSaveCurrentProfile(saveDialogInput)
-                        }
-                      >
-                        Save
-                      </Button>
-                    </DialogTrigger>
-                  </DialogActions>
-                </DialogBody>
-              </DialogSurface>
-            </Dialog>
-            <Button
-              appearance="subtle"
-              className={styles.headerButton}
-              onClick={refreshProfiles}
-              aria-expanded={isExpanded}
-              aria-controls={titleId}
-            >
-              <span className={styles.headerButtonIcon}>&#xE72C;</span>
-            </Button>
-          </>
-        )}
-      </div>
-      <div className={styles.search}>
-        {isExpanded ? (
-          <>
-            <Input
-              className={styles.searchInput}
-              placeholder="Search"
-              type="search"
-              value={searchInput}
-              onChange={(_, data) => setSearchInput(data.value)}
-              ref={searchInputRef}
-            />
-            <Button appearance="subtle" className={styles.searchInputButton}>
-              &#xE721;
-            </Button>
-          </>
-        ) : (
-          <div className={styles.searchButton}>
-            <Button
-              appearance="subtle"
-              className={styles.headerButton}
-              onClick={handleSearch}
-            >
-              <span className={styles.headerButtonIcon}>&#xE721;</span>
-            </Button>
-          </div>
-        )}
-      </div>
-      <div className={styles.profileList}>
-        <TabList
-          className={styles.tabList}
-          vertical
-          selectedValue={
-            selectedProfile === "settings"
-              ? "settings"
-              : (selectedProfile?.name ?? "")
-          }
-          onTabSelect={(_, data) => handleTabSelect(data.value as string)}
-        >
-          {filteredProfiles.map((profile) => (
-            <Tab
-              key={profile.name}
-              value={profile.name}
-              className={styles.tab}
-              icon={{
-                children: <Icon icon={profile.config?.icon ?? "\uE835"} />,
-              }}
-            >
-              {isExpanded ? <ProfileName profile={profile} /> : null}
-            </Tab>
-          ))}
-          <Tab
-            key="settings"
-            value="settings"
-            className={mergeClasses(styles.tab, styles.settingsTab)}
-            icon={{ children: <Icon icon={"\uE713"} /> }}
+    <>
+      {isOverlayMode && (
+        <div className={styles.placeholder} />
+      )}
+      <div className={`${styles.navPane} ${paneClassName}`}>
+        <div className={styles.header}>
+          <Button
+            appearance="subtle"
+            className={styles.headerButton}
+            onClick={toggleExpanded}
+            aria-expanded={isExpanded}
+            aria-controls={titleId}
           >
-            {isExpanded ? "Settings" : null}
-          </Tab>
-        </TabList>
+            <span className={styles.headerButtonIcon}></span>
+          </Button>
+          {isExpanded && (
+            <>
+              <Dialog
+                open={saveDialogOpen}
+                onOpenChange={(_, data) => setSaveDialogOpen(data.open)}
+              >
+                <DialogTrigger disableButtonEnhancement>
+                  <Button
+                    appearance="subtle"
+                    className={styles.headerButton}
+                  >
+                    <span className={styles.headerButtonIcon}></span>
+                  </Button>
+                </DialogTrigger>
+                <DialogSurface className={styles.saveDialogSurface}>
+                  <DialogBody>
+                    <DialogTitle>Save Current Profile</DialogTitle>
+                    <DialogContent className={styles.saveDialogContent}>
+                      <Label>Folder Name</Label>
+                      <Input
+                        className={styles.input}
+                        placeholder="some_profile_name"
+                        value={saveDialogInput}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleSaveCurrentProfile(saveDialogInput);
+                          }
+                        }}
+                        onChange={(_, data) => setSaveDialogInput(data.value)}
+                      />
+                    </DialogContent>
+                    <DialogActions>
+                      <DialogTrigger disableButtonEnhancement>
+                        <Button
+                          appearance="subtle"
+                          className={styles.controlButton}
+                        >
+                          Cancel
+                        </Button>
+                      </DialogTrigger>
+                      <DialogTrigger disableButtonEnhancement>
+                        <Button
+                          appearance="primary"
+                          onClick={() =>
+                            handleSaveCurrentProfile(saveDialogInput)
+                          }
+                        >
+                          Save
+                        </Button>
+                      </DialogTrigger>
+                    </DialogActions>
+                  </DialogBody>
+                </DialogSurface>
+              </Dialog>
+              <Button
+                appearance="subtle"
+                className={styles.headerButton}
+                onClick={refreshProfiles}
+                aria-expanded={isExpanded}
+                aria-controls={titleId}
+              >
+                <span className={styles.headerButtonIcon}></span>
+              </Button>
+            </>
+          )}
+        </div>
+        <div className={styles.search}>
+          {isExpanded ? (
+            <>
+              <Input
+                className={styles.searchInput}
+                placeholder="Search"
+                type="search"
+                value={searchInput}
+                onChange={(_, data) => setSearchInput(data.value)}
+                ref={searchInputRef}
+              />
+              <Button appearance="subtle" className={styles.searchInputButton}>
+                
+              </Button>
+            </>
+          ) : (
+            <div className={styles.searchButton}>
+              <Button
+                appearance="subtle"
+                className={styles.headerButton}
+                onClick={handleSearch}
+              >
+                <span className={styles.headerButtonIcon}></span>
+              </Button>
+            </div>
+          )}
+        </div>
+        <div className={styles.profileList}>
+          <TabList
+            className={styles.tabList}
+            vertical
+            selectedValue={
+              selectedProfile === "settings"
+                ? "settings"
+                : (selectedProfile?.name ?? "")
+            }
+            onTabSelect={(_, data) => handleTabSelect(data.value as string)}
+          >
+            {filteredProfiles.map((profile) => (
+              <Tab
+                key={profile.name}
+                value={profile.name}
+                className={styles.tab}
+                icon={{
+                  children: <Icon icon={profile.config?.icon ?? "\uE835"} />,
+                }}
+              >
+                {isExpanded ? <ProfileName profile={profile} /> : null}
+              </Tab>
+            ))}
+            <Tab
+              key="settings"
+              value="settings"
+              className={mergeClasses(styles.tab, styles.settingsTab)}
+              icon={{ children: <Icon icon={"\uE713"} /> }}
+            >
+              {isExpanded ? "Settings" : null}
+            </Tab>
+          </TabList>
+        </div>
+        <Dialog
+          open={profileExistsDialogOpen}
+          onOpenChange={handleProfileExistsDialogOpenChange}
+        >
+          <DialogSurface>
+            <DialogBody>
+              <DialogTitle>Profile already exists</DialogTitle>
+              <DialogContent>
+                <Label>
+                  The profile <b>{saveDialogInput}</b> already exists. Do you want
+                  to overwrite it?
+                </Label>
+              </DialogContent>
+              <DialogActions>
+                <DialogTrigger disableButtonEnhancement>
+                  <Button appearance="subtle">Cancel</Button>
+                </DialogTrigger>
+                <DialogTrigger disableButtonEnhancement>
+                  <Button
+                    appearance="primary"
+                    onClick={() => {
+                      overwriteConfirmedRef.current = true;
+                      handleSaveCurrentProfile(saveDialogInput, true);
+                      setProfileExistsDialogOpen(false);
+                    }}
+                  >
+                    Overwrite
+                  </Button>
+                </DialogTrigger>
+              </DialogActions>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
       </div>
-      <Dialog
-        open={profileExistsDialogOpen}
-        onOpenChange={handleProfileExistsDialogOpenChange}
-      >
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>Profile already exists</DialogTitle>
-            <DialogContent>
-              <Label>
-                The profile <b>{saveDialogInput}</b> already exists. Do you want
-                to overwrite it?
-              </Label>
-            </DialogContent>
-            <DialogActions>
-              <DialogTrigger disableButtonEnhancement>
-                <Button appearance="subtle">Cancel</Button>
-              </DialogTrigger>
-              <DialogTrigger disableButtonEnhancement>
-                <Button
-                  appearance="primary"
-                  onClick={() => {
-                    overwriteConfirmedRef.current = true;
-                    handleSaveCurrentProfile(saveDialogInput, true);
-                    setProfileExistsDialogOpen(false);
-                  }}
-                >
-                  Overwrite
-                </Button>
-              </DialogTrigger>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
-    </div>
+    </>
   );
 };

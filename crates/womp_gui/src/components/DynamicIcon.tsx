@@ -1,4 +1,4 @@
-import { makeStyles, mergeClasses } from "@fluentui/react-components";
+import { Label, makeStyles, mergeClasses } from "@fluentui/react-components";
 
 const useStyles = makeStyles({
   fluentIcon: {
@@ -43,8 +43,8 @@ export const Icon = ({ icon, className }: { icon: string, className?: string }) 
       (range) => charCode >= range.start && charCode <= range.end,
     )
   ) {
-    return <span className={mergeClasses(styles.fluentIcon, className)}>{icon}</span>;
+    return <Label className={mergeClasses(styles.fluentIcon, className)}>{icon}</Label>;
   }
 
-  return <span className={className}>{icon}</span>;
+  return <Label className={className}>{icon}</Label>;
 };

@@ -12,7 +12,7 @@ export const useTitlebarStyles = makeStyles({
     justifyContent: "space-between",
     alignItems: "center",
     WebkitAppRegion: "drag", // This makes the titlebar draggable
-    zIndex: 100,
+    zIndex: 500,
   },
   title: {
     padding: "20px 16px",

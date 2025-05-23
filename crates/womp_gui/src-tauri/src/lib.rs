@@ -38,8 +38,8 @@ pub fn run() {
                 ),
             )
             .title("WOMP Config UI")
-            .inner_size(800.0, 600.0)
-            .min_inner_size(800.0, 600.0)
+            .inner_size(1000.0, 700.0)
+            .min_inner_size(600.0, 500.0)
             .resizable(true)
             .decorations(false)
             .transparent(true)

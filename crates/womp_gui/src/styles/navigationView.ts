@@ -4,19 +4,35 @@ export const useNavigationViewStyles = makeStyles({
   navPane: {
     display: "flex",
     flexDirection: "column",
-    margin: "0 5px",
+    padding: "0 5px",
     gap: "5px",
     flexShrink: 0,
     height: "100%",
     zIndex: 100,
-    transition: "width 0.2s ease-in-out",
+    transition: "width 0.2s ease-in-out, background-color 0.2s ease-in-out",
   },
   collapsed: {
-    width: "40px",
+    width: "50px",
     overflowX: "hidden",
   },
   expanded: {
     width: "320px",
+  },
+  overlay: {
+    position: "absolute",
+    left: "0",
+    top: "0",
+    paddingTop: "50px",
+    zIndex: 200,
+  },
+  overlayExpanded: {
+    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+    backgroundColor: "var(--colorNeutralBackground1)",
+  },
+  placeholder: {
+    width: "50px",
+    height: "100%",
+    flexShrink: 0,
   },
   header: {
     display: "flex",

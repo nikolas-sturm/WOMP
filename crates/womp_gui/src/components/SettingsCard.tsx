@@ -44,7 +44,6 @@ const useStyles = makeStyles({
   },
   cardHeader: {
     padding: tokens.spacingHorizontalL,
-    cursor: "default !important",
     "&:hover": {
       backgroundColor: "var(--hoverBackground)",
     },
@@ -67,11 +66,7 @@ const useStyles = makeStyles({
   },
   // Styles for the content area that appears when the card is expanded
   expandedContent: {
-    "&:hover": {
-      backgroundColor: "var(--hoverBackground)",
-    },
     padding: 0,
-    borderTop: "1px solid var(--colorNeutralBackground1)",
     transition: 'max-height 0.3s ease',
     maxHeight: '1000px',
     overflow: 'hidden',
@@ -85,7 +80,11 @@ const useStyles = makeStyles({
   },
   contentWrapper: {
     padding: tokens.spacingHorizontalL,
-    transition: 'transform 0.3s ease, opacity 0.3s ease',
+    borderTop: "1px solid var(--colorNeutralBackground1)",
+    transition: 'transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease',
+    "&:hover": {
+      backgroundColor: "var(--hoverBackground)",
+    },
   },
   icon: {
     marginRight: tokens.spacingHorizontalL,
@@ -93,6 +92,7 @@ const useStyles = makeStyles({
   },
   chevronIcon: {
     transition: 'transform 0.2s ease',
+    color: tokens.colorNeutralForeground1,
   },
   rotated: {
     transform: 'rotate(-180deg)',
@@ -169,31 +169,49 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
         header={renderedCardHeaderContent}
         action={renderedCardHeaderAction}
         onClick={expandable ? handleToggleExpand : undefined}
-        style={expandable ? { cursor: 'pointer' } : {}}
       />
-      {expandable && (
+      {expandable && children && (
         <div
           className={mergeClasses(
             isExpanded ? styles.expandedContent : styles.collapsedContent
           )}
           style={{
             maxHeight: isExpanded ? '1000px' : '0',
-            transition: 'max-height 0.3s ease'
+            transition: 'max-height 0.2s ease'
           }}
         >
-          <div
-            className={styles.contentWrapper}
-            style={{
-              paddingLeft: icon
-                ? `calc(${tokens.spacingHorizontalL} + 24px + ${tokens.spacingHorizontalM})`
-                : tokens.spacingHorizontalL,
-              opacity: isExpanded ? 1 : 0,
-              transform: isExpanded ? 'translateY(0)' : 'translateY(-20px)',
-              transition: 'transform 0.3s ease, opacity 0.3s ease'
-            }}
-          >
-            {children}
-          </div>
+          {React.Children.map(children, (child, index) => {
+            if (!React.isValidElement(child)) return child;
+
+            // Extract the onClick handler from the child
+            const childOnClick = child.props.onClick;
+
+            // Create wrapper onClick that calls child's onClick
+            const wrapperOnClick = childOnClick ? (e: React.MouseEvent) => {
+              e.stopPropagation(); // Prevent bubbling
+              childOnClick(e);
+            } : undefined;
+
+            return (
+              <div
+                className={styles.contentWrapper}
+                key={index}
+                onClick={wrapperOnClick}
+                style={{
+                  paddingLeft: icon
+                    ? `calc(${tokens.spacingHorizontalL} + 24px + ${tokens.spacingHorizontalM})`
+                    : tokens.spacingHorizontalL,
+                  opacity: isExpanded ? 1 : 0,
+                  transform: isExpanded ? 'translateY(0)' : 'translateY(-20px)',
+                }}
+              >
+                {/* Clone the child element but remove its onClick to prevent double firing */}
+                {React.isValidElement(child)
+                  ? React.cloneElement(child, { ...child.props, onClick: undefined })
+                  : child}
+              </div>
+            );
+          })}
         </div>
       )}
     </Card>
