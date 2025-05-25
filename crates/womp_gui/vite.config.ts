@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, searchForWorkspaceRoot } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 const host = process.env.TAURI_DEV_HOST;
@@ -19,14 +19,20 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host
       ? {
-          protocol: "ws",
-          host,
-          port: 1421,
-        }
+        protocol: "ws",
+        host,
+        port: 1421,
+      }
       : undefined,
     watch: {
       // 3. tell Vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"],
+    },
+    fs: {
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        "C:/Windows/SystemResources/Windows.UI.SettingsAppThreshold/SystemSettings/Assets/Fonts/SettingsIcons.ttf",
+      ],
     },
   },
 }));

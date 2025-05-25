@@ -17,7 +17,6 @@ async function unicodeToPng(glyph: string, size: number, color: string): Promise
   const isFluentPua = FLUENT_PUA_RANGES.some(range => codePoint >= range.start && codePoint <= range.end);
   const isEmoji = emojiRegex().test(glyph);
   const glyphType: GlyphType = isFluentPua ? "fluent" : isEmoji ? "emoji" : "other";
-  console.log(`Glyph ${glyph} is ${glyphType}`);
 
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -29,7 +28,7 @@ async function unicodeToPng(glyph: string, size: number, color: string): Promise
   }
 
   ctx.clearRect(0, 0, size, size);
-  ctx.font = `16px "Segoe Fluent Icons", "Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI"`;
+  ctx.font = `16px "Segoe Fluent Icons", "Settings Fluent Icons", "Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI"`;
   ctx.fillStyle = color;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'center';

@@ -3,16 +3,17 @@ import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 
 interface ProfileStore {
+  activeProfile: string | null;
   profiles: Profile[];
   selectedProfile: Profile | "settings" | null;
   initialized: boolean;
   setProfiles: (profiles: Profile[]) => void;
   initProfiles: () => Promise<Profile[]>;
-  updateProfiles: () => Promise<Profile[]>;
   setSelectedProfile: (profile: Profile | "settings" | null) => void;
 }
 
 export const useProfileStore = create<ProfileStore>((set, _) => ({
+  activeProfile: null,
   profiles: [],
   selectedProfile: null,
   initialized: false,
@@ -21,12 +22,9 @@ export const useProfileStore = create<ProfileStore>((set, _) => ({
     set({ selectedProfile: profile }),
   initProfiles: async () => {
     const profiles: Profile[] = await invoke("get_profiles");
-    set({ profiles, initialized: true });
-    return profiles;
-  },
-  updateProfiles: async () => {
-    const profiles: Profile[] = await invoke("get_profiles");
     set({ profiles });
+    const activeProfile: string | null = await invoke("get_active_profile");
+    set({ activeProfile, initialized: true });
     return profiles;
-  },
+  }
 }));

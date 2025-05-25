@@ -7,6 +7,10 @@
     ],
     "permissions": [
         "core:default",
+        "process:default",
+        "autostart:default",
+        "notification:default",
+
         "core:window:allow-create",
         "core:webview:allow-create-webview",
         "core:webview:allow-webview-show",
@@ -20,7 +24,6 @@
         "core:window:allow-show",
         "core:window:allow-set-focus",
         "core:window:allow-is-minimized",
-        "core:window:allow-unminimize",
-        "process:default"
+        "core:window:allow-unminimize"
     ]
 }

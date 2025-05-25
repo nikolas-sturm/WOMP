@@ -1,6 +1,89 @@
-use crate::serde_types::Display;
+use crate::serde_types::{
+    Display, DisplayLayout, GlobalInfo, global_config::GlobalConfig, optional_info::OptionalInfo, WallpaperInfo,
+};
 use itertools::Itertools;
-use windows::Win32::{Devices::Display::*, Foundation::*};
+use std::mem::size_of;
+use windows::Win32::{
+    Devices::Display::*, Foundation::*, System::Com::*, System::Variant::VARIANT, UI::Shell::*,
+    UI::WindowsAndMessaging::*,
+};
+use windows::core::{HSTRING, Interface, PCWSTR};
+
+// DPI values observed from system settings
+const DPI_VALS: [u32; 12] = [100, 125, 150, 175, 200, 225, 250, 300, 350, 400, 450, 500];
+
+// Custom device info types (undocumented)
+const DISPLAYCONFIG_DEVICE_INFO_GET_DPI_SCALE: i32 = -3;
+const DISPLAYCONFIG_DEVICE_INFO_SET_DPI_SCALE: i32 = -4;
+const DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO: i32 = 9;
+const DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE: i32 = 10;
+const DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL: i32 = 11;
+const DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL: i32 = -18; // 0xFFFFFFEE in hex
+
+// DPI scaling info structure
+pub struct DpiScalingInfo {
+    pub minimum: u32,
+    pub maximum: u32,
+    pub current: u32,
+    pub recommended: u32,
+}
+
+// HDR/Advanced Color info structure
+pub struct HdrInfo {
+    pub advanced_color_supported: bool,
+    pub advanced_color_enabled: bool,
+    pub wide_color_enforced: bool,
+    pub advanced_color_force_disabled: bool,
+    pub color_encoding: u32,
+    pub bits_per_color_channel: i32,
+}
+
+// Custom struct for getting DPI scale info
+#[repr(C)]
+struct DisplayConfigSourceDpiScaleGet {
+    header: DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    min_scale_rel: i32,
+    cur_scale_rel: i32,
+    max_scale_rel: i32,
+}
+
+// Custom struct for setting DPI scale
+#[repr(C)]
+struct DisplayConfigSourceDpiScaleSet {
+    header: DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    scale_rel: i32,
+}
+
+// Custom struct for getting advanced color info
+#[repr(C)]
+struct DisplayConfigGetAdvancedColorInfo {
+    header: DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    value: u32,
+    color_encoding: u32,
+    bits_per_color_channel: i32,
+}
+
+// Custom struct for setting advanced color state
+#[repr(C)]
+struct DisplayConfigSetAdvancedColorState {
+    header: DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    enable_advanced_color: u32,
+}
+
+// Custom struct for getting SDR white level
+#[repr(C)]
+struct DisplayConfigGetSdrWhiteLevel {
+    header: DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    sdr_white_level: u32,
+}
+
+// Custom struct for setting SDR white level
+#[repr(C)]
+struct DisplayConfigSetSdrWhiteLevel {
+    header: DISPLAYCONFIG_DEVICE_INFO_HEADER,
+    sdr_white_level: u32,
+    final_value: u8,
+}
 
 pub struct CCDWrapper {
     flags: QUERY_DISPLAY_CONFIG_FLAGS,
@@ -107,8 +190,16 @@ impl CCDWrapper {
 
     fn get_additional_info(
         &self,
-        target: &DISPLAYCONFIG_PATH_TARGET_INFO,
-    ) -> (DISPLAYCONFIG_TARGET_DEVICE_NAME, DISPLAYCONFIG_ADAPTER_NAME) {
+        path: &DISPLAYCONFIG_PATH_INFO,
+        global_config: &GlobalConfig,
+    ) -> (
+        DISPLAYCONFIG_TARGET_DEVICE_NAME,
+        DISPLAYCONFIG_ADAPTER_NAME,
+        OptionalInfo,
+    ) {
+        let target = &path.targetInfo;
+        let source = &path.sourceInfo;
+
         let mut target_name: DISPLAYCONFIG_TARGET_DEVICE_NAME = Default::default();
         let mut adapter_name: DISPLAYCONFIG_ADAPTER_NAME = Default::default();
 
@@ -116,14 +207,14 @@ impl CCDWrapper {
             adapterId: target.adapterId,
             id: target.id,
             r#type: DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME,
-            size: std::mem::size_of::<DISPLAYCONFIG_TARGET_DEVICE_NAME>() as u32,
+            size: size_of::<DISPLAYCONFIG_TARGET_DEVICE_NAME>() as u32,
         };
 
         adapter_name.header = DISPLAYCONFIG_DEVICE_INFO_HEADER {
             adapterId: target.adapterId,
             id: target.id,
             r#type: DISPLAYCONFIG_DEVICE_INFO_GET_ADAPTER_NAME,
-            size: std::mem::size_of::<DISPLAYCONFIG_ADAPTER_NAME>() as u32,
+            size: size_of::<DISPLAYCONFIG_ADAPTER_NAME>() as u32,
         };
 
         let raw_target_header = &mut target_name.header as *mut DISPLAYCONFIG_DEVICE_INFO_HEADER;
@@ -145,10 +236,53 @@ impl CCDWrapper {
             }
         }
 
-        (target_name, adapter_name)
+        // Only get DPI info if it's enabled in config
+        let dpi_scale = if global_config.save_dpi_scale {
+            match self.get_display_dpi_info(source.adapterId, source.id) {
+                Ok(dpi_info) => Some(dpi_info.current),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
+        // Only get HDR info if it's enabled in config
+        let (hdr_supported, hdr_enabled) = if global_config.save_hdr_state {
+            match self.get_display_hdr_info(target.adapterId, target.id) {
+                Ok(hdr_info) => (
+                    Some(hdr_info.advanced_color_supported),
+                    Some(hdr_info.advanced_color_enabled),
+                ),
+                Err(_) => (None, None),
+            }
+        } else {
+            (None, None)
+        };
+
+        // Only get SDR white level if HDR is enabled and the feature is enabled in config
+        let sdr_white_level = if global_config.save_sdr_white_level && hdr_enabled == Some(true) {
+            match self.get_display_sdr_white_level(target.adapterId, target.id) {
+                Ok(level) => Some(level),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
+        let settings = OptionalInfo {
+            dpiScale: dpi_scale,
+            hdrSupported: hdr_supported,
+            hdrEnabled: hdr_enabled,
+            sdrWhiteLevel: sdr_white_level,
+        };
+
+        (target_name, adapter_name, settings)
     }
 
-    pub fn get_displays(&mut self) -> Result<Vec<Display>, String> {
+    pub fn get_display_layout(
+        &mut self,
+        global_config: &GlobalConfig,
+    ) -> Result<DisplayLayout, String> {
         let result = self.get_paths_and_modes();
         if let Err(_) = result {
             panic!("Cannot continue without paths and modes!");
@@ -165,7 +299,8 @@ impl CCDWrapper {
                 continue;
             }
 
-            let (target_name, adapter_name) = self.get_additional_info(&path.targetInfo);
+            let (target_name, adapter_name, optional_info) =
+                self.get_additional_info(&path, global_config);
 
             displays.push(Display::from(
                 path,
@@ -173,19 +308,41 @@ impl CCDWrapper {
                 modes[1],
                 &target_name,
                 &adapter_name,
+                &optional_info,
             ))
         }
 
-        Result::Ok(displays)
+        let icon_size = if global_config.save_icon_size {
+            match self.get_desktop_icon_size() {
+                Ok((_, icon_size)) => Some(icon_size),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
+        let wallpaper_info = if global_config.save_wallpaper_info {
+            match self.get_wallpaper_info() {
+                Ok(wallpaper_info) => Some(wallpaper_info),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
+        let global_info = GlobalInfo::from(icon_size, wallpaper_info);
+        let display_layout = DisplayLayout::from(displays, global_info);
+
+        Result::Ok(display_layout)
     }
 
     fn adjust_adapter_ids(
         &self,
-        source: &Vec<Display>,
-        target: &mut Vec<Display>,
+        source: &DisplayLayout,
+        target: &mut DisplayLayout,
     ) -> Result<(), String> {
-        for display in target {
-            for s in source {
+        for display in &mut target.displays {
+            for s in &source.displays {
                 if s.pathInfo.targetInfo.id == display.pathInfo.targetInfo.id {
                     let new_id = s.pathInfo.targetInfo.adapterId;
 
@@ -201,13 +358,17 @@ impl CCDWrapper {
         Ok(())
     }
 
-    pub fn apply_display_layout(&mut self, display_layout: &mut Vec<Display>) -> Result<(), String> {
-        let current_config = match self.get_displays() {
-            Ok(displays) => displays,
+    pub fn apply_display_layout(
+        &mut self,
+        display_layout: &mut DisplayLayout,
+        global_config: &GlobalConfig,
+    ) -> Result<(), String> {
+        let current_layout = match self.get_display_layout(global_config) {
+            Ok(display_layout) => display_layout,
             Err(e) => panic!("Could not load current display config: {e}!"),
         };
 
-        if let Err(e) = self.adjust_adapter_ids(&current_config, display_layout) {
+        if let Err(e) = self.adjust_adapter_ids(&current_layout, display_layout) {
             panic!("Could not adjust adapterIds: {e}!");
         }
 
@@ -217,7 +378,7 @@ impl CCDWrapper {
         let mut target_names = vec![];
         let mut adapter_names = vec![];
 
-        for d in display_layout {
+        for d in &display_layout.displays {
             let (path_info, target_mode_info, source_mode_info, target_name, adapter_name) =
                 d.to_windows_types();
             paths.push(path_info);
@@ -275,6 +436,636 @@ impl CCDWrapper {
             return Err(format!("Failed to apply using SDC_ALLOW_CHANGES: {res:?}"));
         }
 
+        if global_config.save_dpi_scale {
+            for d in &display_layout.displays {
+                self.set_display_dpi(
+                    d.pathInfo.sourceInfo.adapterId,
+                    d.pathInfo.sourceInfo.id,
+                    d.optionalInfo.dpiScale.unwrap(),
+                )?;
+            }
+        }
+
+        if global_config.save_hdr_state {
+            for d in &display_layout.displays {
+                if let (Some(enabled), Some(supported)) =
+                    (d.optionalInfo.hdrEnabled, d.optionalInfo.hdrSupported)
+                {
+                    if supported {
+                        self.set_display_hdr(
+                            d.pathInfo.targetInfo.adapterId,
+                            d.pathInfo.targetInfo.id,
+                            enabled,
+                        )?;
+                    }
+                }
+            }
+        }
+
+        if global_config.save_sdr_white_level {
+            for d in &display_layout.displays {
+                if let (Some(white_level), Some(hdr_enabled)) =
+                    (d.optionalInfo.sdrWhiteLevel, d.optionalInfo.hdrEnabled)
+                {
+                    if hdr_enabled {
+                        self.set_display_sdr_white_level(
+                            d.pathInfo.targetInfo.adapterId,
+                            d.pathInfo.targetInfo.id,
+                            white_level,
+                        )?;
+                    }
+                }
+            }
+        }
+
+        if global_config.save_icon_size {
+            self.set_desktop_icon_size(&display_layout.globalInfo.iconSize.unwrap())?;
+        }
+
+        if global_config.save_wallpaper_info {
+            self.set_wallpaper_info(&display_layout.globalInfo.wallpaperInfo.as_ref().unwrap())?;
+        }
+
         Ok(())
+    }
+
+    pub fn turn_off_all_displays(&mut self) -> Result<(), String> {
+        unsafe {
+            let res = SendMessageA(
+                HWND_BROADCAST,
+                WM_SYSCOMMAND,
+                WPARAM(SC_MONITORPOWER as usize),
+                LPARAM(2), // MONITOR_OFF
+            );
+            if res != LRESULT(0) {
+                return Err(format!("Failed to turn off all displays: {res:?}"));
+            }
+        }
+        Ok(())
+    }
+
+    fn get_display_dpi_info(
+        &self,
+        adapter_id: LUID,
+        source_id: u32,
+    ) -> Result<DpiScalingInfo, String> {
+        let mut dpi_info = DpiScalingInfo {
+            minimum: 100,
+            maximum: 100,
+            current: 100,
+            recommended: 100,
+        };
+
+        let mut request_packet = DisplayConfigSourceDpiScaleGet {
+            header: DISPLAYCONFIG_DEVICE_INFO_HEADER {
+                adapterId: adapter_id,
+                id: source_id,
+                size: size_of::<DisplayConfigSourceDpiScaleGet>() as u32,
+                r#type: DISPLAYCONFIG_DEVICE_INFO_TYPE(DISPLAYCONFIG_DEVICE_INFO_GET_DPI_SCALE),
+            },
+            min_scale_rel: 0,
+            cur_scale_rel: 0,
+            max_scale_rel: 0,
+        };
+
+        let header_ptr = &mut request_packet.header as *mut DISPLAYCONFIG_DEVICE_INFO_HEADER;
+
+        let result = unsafe { DisplayConfigGetDeviceInfo(header_ptr) };
+
+        if result != ERROR_SUCCESS.0 as i32 {
+            return Err(format!(
+                "Failed to get DPI info: {:?}",
+                WIN32_ERROR(result.try_into().unwrap())
+            ));
+        }
+
+        // Ensure current value is within bounds
+        if request_packet.cur_scale_rel < request_packet.min_scale_rel {
+            request_packet.cur_scale_rel = request_packet.min_scale_rel;
+        } else if request_packet.cur_scale_rel > request_packet.max_scale_rel {
+            request_packet.cur_scale_rel = request_packet.max_scale_rel;
+        }
+
+        // Calculate absolute index values safely
+        let min_abs = (request_packet.min_scale_rel.abs()) as usize;
+
+        // Check if all required indices fit within the DPI_VALS array
+        // This avoids overflow by checking each component separately
+        if min_abs < DPI_VALS.len()
+            && request_packet.max_scale_rel >= 0
+            && (request_packet.max_scale_rel as usize) < DPI_VALS.len()
+            && min_abs + (request_packet.max_scale_rel as usize) < DPI_VALS.len()
+        {
+            // Safe to calculate indices - directly use the values as in the C++ code
+            let curr_rel = request_packet.cur_scale_rel;
+            // Handle negative cur_scale_rel properly
+            let curr_idx = if curr_rel < 0 {
+                // For negative values, we need to be careful not to underflow
+                if min_abs >= curr_rel.unsigned_abs() as usize {
+                    min_abs - curr_rel.unsigned_abs() as usize
+                } else {
+                    // If would underflow, clamp to 0
+                    0
+                }
+            } else {
+                min_abs + curr_rel as usize
+            };
+
+            let max_idx = min_abs + request_packet.max_scale_rel as usize;
+
+            // Ensure all indices are in bounds
+            if curr_idx < DPI_VALS.len() && max_idx < DPI_VALS.len() {
+                dpi_info.current = DPI_VALS[curr_idx];
+                dpi_info.recommended = DPI_VALS[min_abs];
+                dpi_info.maximum = DPI_VALS[max_idx];
+                dpi_info.minimum = 100; // Always 100
+
+                Ok(dpi_info)
+            } else {
+                Err("Calculated DPI indices out of bounds".to_string())
+            }
+        } else {
+            Err("DPI values array is outdated or incompatible".to_string())
+        }
+    }
+
+    pub fn set_display_dpi(
+        &self,
+        adapter_id: LUID,
+        source_id: u32,
+        dpi_percent: u32,
+    ) -> Result<(), String> {
+        // First get current DPI info to determine relative values
+        let dpi_info = self.get_display_dpi_info(adapter_id, source_id)?;
+
+        // Skip if already at the requested value
+        if dpi_percent == dpi_info.current {
+            return Ok(());
+        }
+
+        // Find indices in the DPI values array
+        let mut target_idx = -1;
+        let mut recommended_idx = -1;
+
+        for (i, &val) in DPI_VALS.iter().enumerate() {
+            if val == dpi_percent {
+                target_idx = i as i32;
+            }
+            if val == dpi_info.recommended {
+                recommended_idx = i as i32;
+            }
+
+            if target_idx != -1 && recommended_idx != -1 {
+                break;
+            }
+        }
+
+        if target_idx == -1 || recommended_idx == -1 {
+            return Err(format!(
+                "Could not find DPI value {} or recommended value {} in supported values",
+                dpi_percent, dpi_info.recommended
+            ));
+        }
+
+        // Calculate relative DPI value
+        let dpi_relative_val = target_idx - recommended_idx;
+
+        // Create set packet
+        let mut set_packet = DisplayConfigSourceDpiScaleSet {
+            header: DISPLAYCONFIG_DEVICE_INFO_HEADER {
+                adapterId: adapter_id,
+                id: source_id,
+                size: size_of::<DisplayConfigSourceDpiScaleSet>() as u32,
+                r#type: DISPLAYCONFIG_DEVICE_INFO_TYPE(DISPLAYCONFIG_DEVICE_INFO_SET_DPI_SCALE),
+            },
+            scale_rel: dpi_relative_val,
+        };
+
+        let header_ptr = &mut set_packet.header as *mut DISPLAYCONFIG_DEVICE_INFO_HEADER;
+
+        let result = unsafe { DisplayConfigSetDeviceInfo(header_ptr) };
+
+        if result != ERROR_SUCCESS.0 as i32 {
+            return Err(format!(
+                "Failed to set DPI value: {:?}",
+                WIN32_ERROR(result.try_into().unwrap())
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn get_desktop_icon_size(&self) -> Result<(FOLDERVIEWMODE, i32), String> {
+        let result = self.find_desktop_folder_view();
+        match result {
+            Ok(folder_view) => {
+                let mut view_mode = FOLDERVIEWMODE::default();
+                let mut icon_size = 0i32;
+
+                unsafe {
+                    let hr = folder_view.GetViewModeAndIconSize(&mut view_mode, &mut icon_size);
+                    if hr.is_err() {
+                        return Err(format!("GetViewModeAndIconSize failed: {:?}", hr));
+                    }
+                }
+
+                Ok((view_mode, icon_size))
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn set_desktop_icon_size(&self, icon_size: &i32) -> Result<(), String> {
+        // Get current view mode and icon size
+        let (view_mode, current_size) = self.get_desktop_icon_size()?;
+
+        // Skip if already at requested size
+        if current_size == *icon_size {
+            return Ok(());
+        }
+
+        let result = self.find_desktop_folder_view();
+        match result {
+            Ok(folder_view) => {
+                unsafe {
+                    let hr = folder_view.SetViewModeAndIconSize(view_mode, *icon_size);
+                    if hr.is_err() {
+                        return Err(format!("SetViewModeAndIconSize failed: {:?}", hr));
+                    }
+                }
+                Ok(())
+            }
+            Err(e) => Err(e),
+        }
+    }
+
+    // Helper function to find the desktop folder view and query for the requested interface
+    fn find_desktop_folder_view(&self) -> Result<IFolderView2, String> {
+        unsafe {
+            // Initialize COM if not already initialized
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            if hr.is_err() && hr != CO_E_ALREADYINITIALIZED {
+                return Err(format!("Failed to initialize COM: {:?}", hr));
+            }
+
+            // Create IShellWindows instance
+            let shell_windows: IShellWindows =
+                match CoCreateInstance(&ShellWindows, None, CLSCTX_ALL) {
+                    Ok(windows) => windows,
+                    Err(e) => {
+                        return Err(format!("Failed to create IShellWindows instance: {:?}", e));
+                    }
+                };
+
+            // Find desktop window
+            let loc = VARIANT::from(CSIDL_DESKTOP as i32);
+            let empty = VARIANT::default();
+            let mut hwnd = 0i32;
+
+            let dispatch = match shell_windows.FindWindowSW(
+                &loc,
+                &empty,
+                SWC_DESKTOP,
+                &mut hwnd,
+                SWFO_NEEDDISPATCH,
+            ) {
+                Ok(dispatch) => dispatch,
+                Err(e) => return Err(format!("Failed to find desktop window: {:?}", e)),
+            };
+
+            // Query for IServiceProvider
+            let service_provider: IServiceProvider = match dispatch.cast() {
+                Ok(provider) => provider,
+                Err(e) => return Err(format!("Failed to get IServiceProvider interface: {:?}", e)),
+            };
+
+            // Get shell browser
+            let browser: IShellBrowser = match service_provider.QueryService(&SID_STopLevelBrowser)
+            {
+                Ok(browser) => browser,
+                Err(e) => return Err(format!("Failed to get IShellBrowser: {:?}", e)),
+            };
+
+            // Get shell view
+            let view = match browser.QueryActiveShellView() {
+                Ok(view) => view,
+                Err(e) => return Err(format!("Failed to get IShellView: {:?}", e)),
+            };
+
+            // Query for requested interface
+            match view.cast::<IFolderView2>() {
+                Ok(folder_view) => Ok(folder_view),
+                Err(e) => Err(format!("Failed to query for requested interface: {:?}", e)),
+            }
+        }
+    }
+
+    fn get_display_hdr_info(&self, adapter_id: LUID, source_id: u32) -> Result<HdrInfo, String> {
+        let mut color_info = DisplayConfigGetAdvancedColorInfo {
+            header: DISPLAYCONFIG_DEVICE_INFO_HEADER {
+                adapterId: adapter_id,
+                id: source_id,
+                size: size_of::<DisplayConfigGetAdvancedColorInfo>() as u32,
+                r#type: DISPLAYCONFIG_DEVICE_INFO_TYPE(
+                    DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO,
+                ),
+            },
+            value: 0,
+            color_encoding: 0,
+            bits_per_color_channel: 0,
+        };
+
+        let header_ptr = &mut color_info.header as *mut DISPLAYCONFIG_DEVICE_INFO_HEADER;
+
+        let result = unsafe { DisplayConfigGetDeviceInfo(header_ptr) };
+
+        if result != ERROR_SUCCESS.0 as i32 {
+            return Err(format!(
+                "Failed to get HDR info: {:?}",
+                WIN32_ERROR(result.try_into().unwrap())
+            ));
+        }
+
+        // Extract boolean flags from the value field
+        let advanced_color_supported = (color_info.value & 0x1) == 0x1;
+        let advanced_color_enabled = (color_info.value & 0x2) == 0x2;
+        let wide_color_enforced = (color_info.value & 0x4) == 0x4;
+        let advanced_color_force_disabled = (color_info.value & 0x8) == 0x8;
+
+        Ok(HdrInfo {
+            advanced_color_supported,
+            advanced_color_enabled,
+            wide_color_enforced,
+            advanced_color_force_disabled,
+            color_encoding: color_info.color_encoding,
+            bits_per_color_channel: color_info.bits_per_color_channel,
+        })
+    }
+
+    pub fn get_display_sdr_white_level(
+        &self,
+        adapter_id: LUID,
+        source_id: u32,
+    ) -> Result<u32, String> {
+        // First check if HDR is supported and enabled
+        let hdr_info = self.get_display_hdr_info(adapter_id, source_id)?;
+
+        if !hdr_info.advanced_color_supported || !hdr_info.advanced_color_enabled {
+            return Err("HDR is not supported or not enabled on this display".to_string());
+        }
+
+        let mut white_level_info = DisplayConfigGetSdrWhiteLevel {
+            header: DISPLAYCONFIG_DEVICE_INFO_HEADER {
+                adapterId: adapter_id,
+                id: source_id,
+                size: size_of::<DisplayConfigGetSdrWhiteLevel>() as u32,
+                r#type: DISPLAYCONFIG_DEVICE_INFO_TYPE(
+                    DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL,
+                ),
+            },
+            sdr_white_level: 0,
+        };
+
+        let header_ptr = &mut white_level_info.header as *mut DISPLAYCONFIG_DEVICE_INFO_HEADER;
+
+        let result = unsafe { DisplayConfigGetDeviceInfo(header_ptr) };
+
+        if result != ERROR_SUCCESS.0 as i32 {
+            return Err(format!(
+                "Failed to get SDR white level: {:?}",
+                WIN32_ERROR(result.try_into().unwrap())
+            ));
+        }
+
+        // Convert from internal value to nits (same formula as in the C example)
+        let nits = white_level_info.sdr_white_level * 80 / 1000;
+
+        Ok(nits)
+    }
+
+    pub fn set_display_hdr(
+        &self,
+        adapter_id: LUID,
+        source_id: u32,
+        enable: bool,
+    ) -> Result<(), String> {
+        // First check if HDR is supported and if it's already in the desired state
+        let hdr_info = self.get_display_hdr_info(adapter_id, source_id)?;
+
+        // If HDR is not supported, return an error
+        if !hdr_info.advanced_color_supported {
+            return Err("HDR is not supported on this display".to_string());
+        }
+
+        // If HDR is already in the desired state, we don't need to do anything
+        if hdr_info.advanced_color_enabled == enable {
+            return Ok(());
+        }
+
+        // Create the set packet
+        let mut set_packet = DisplayConfigSetAdvancedColorState {
+            header: DISPLAYCONFIG_DEVICE_INFO_HEADER {
+                adapterId: adapter_id,
+                id: source_id,
+                size: size_of::<DisplayConfigSetAdvancedColorState>() as u32,
+                r#type: DISPLAYCONFIG_DEVICE_INFO_TYPE(
+                    DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE,
+                ),
+            },
+            enable_advanced_color: if enable { 1 } else { 0 },
+        };
+
+        let header_ptr = &mut set_packet.header as *mut DISPLAYCONFIG_DEVICE_INFO_HEADER;
+
+        let result = unsafe { DisplayConfigSetDeviceInfo(header_ptr) };
+
+        if result != ERROR_SUCCESS.0 as i32 {
+            return Err(format!(
+                "Failed to set HDR state: {:?}",
+                WIN32_ERROR(result.try_into().unwrap())
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn set_display_sdr_white_level(
+        &self,
+        adapter_id: LUID,
+        source_id: u32,
+        nits: u32,
+    ) -> Result<(), String> {
+        // Check if HDR is supported and enabled
+        let hdr_info = self.get_display_hdr_info(adapter_id, source_id)?;
+
+        if !hdr_info.advanced_color_supported || !hdr_info.advanced_color_enabled {
+            return Err("HDR is not supported or not enabled on this display".to_string());
+        }
+
+        // Validate nits range (same as in C example)
+        if nits < 80 || nits > 480 {
+            return Err(format!(
+                "Invalid nits value {}. Value must be between 80 and 480.",
+                nits
+            ));
+        }
+
+        // Round up to multiple of 4 to match SDR brightness slider increments
+        let nits = if nits % 4 != 0 {
+            nits + (4 - (nits % 4))
+        } else {
+            nits
+        };
+
+        // Convert from nits to internal value (same formula as in the C example)
+        let internal_value = nits * 1000 / 80;
+
+        let mut set_packet = DisplayConfigSetSdrWhiteLevel {
+            header: DISPLAYCONFIG_DEVICE_INFO_HEADER {
+                adapterId: adapter_id,
+                id: source_id,
+                size: size_of::<DisplayConfigSetSdrWhiteLevel>() as u32,
+                r#type: DISPLAYCONFIG_DEVICE_INFO_TYPE(
+                    DISPLAYCONFIG_DEVICE_INFO_SET_SDR_WHITE_LEVEL,
+                ),
+            },
+            sdr_white_level: internal_value,
+            final_value: 1,
+        };
+
+        let header_ptr = &mut set_packet.header as *mut DISPLAYCONFIG_DEVICE_INFO_HEADER;
+
+        let result = unsafe { DisplayConfigSetDeviceInfo(header_ptr) };
+
+        if result != ERROR_SUCCESS.0 as i32 {
+            return Err(format!(
+                "Failed to set SDR white level: {:?}",
+                WIN32_ERROR(result.try_into().unwrap())
+            ));
+        }
+
+        Ok(())
+    }
+
+    pub fn get_wallpaper_info(&self) -> Result<WallpaperInfo, String> {
+        unsafe {
+            // Initialize COM
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            if hr.is_err() && hr != CO_E_ALREADYINITIALIZED {
+                return Err(format!("Failed to initialize COM: {:?}", hr));
+            }
+
+            // Create IDesktopWallpaper instance
+            let desktop_wallpaper: IDesktopWallpaper =
+                match CoCreateInstance(&DesktopWallpaper, None, CLSCTX_LOCAL_SERVER) {
+                    Ok(wallpaper) => wallpaper,
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to create IDesktopWallpaper instance: {:?}",
+                            e
+                        ));
+                    }
+                };
+
+            // Get current wallpaper for the primary monitor (NULL)
+            let wallpaper_pwstr = match desktop_wallpaper.GetWallpaper(PCWSTR::null()) {
+                Ok(path) => path,
+                Err(e) => {
+                    return Err(format!("Failed to get wallpaper path: {:?}", e));
+                }
+            };
+
+            // Convert PWSTR to String
+            let wallpaper_path_wide = wallpaper_pwstr.as_wide();
+            let wallpaper_path = match String::from_utf16(wallpaper_path_wide) {
+                Ok(s) => s,
+                Err(_) => {
+                    return Err("Failed to convert wallpaper path to string".to_string());
+                }
+            };
+
+            // Get current wallpaper position
+            let position = match desktop_wallpaper.GetPosition() {
+                Ok(pos) => pos,
+                Err(e) => {
+                    return Err(format!("Failed to get wallpaper position: {:?}", e));
+                }
+            };
+
+            // Convert position to string
+            let position_str = match position {
+                DWPOS_CENTER => "center".to_string(),
+                DWPOS_TILE => "tile".to_string(),
+                DWPOS_STRETCH => "stretch".to_string(),
+                DWPOS_FIT => "fit".to_string(),
+                DWPOS_FILL => "fill".to_string(),
+                DWPOS_SPAN => "span".to_string(),
+                _ => "unknown".to_string(),
+            };
+
+            // Free COM resources
+            CoFreeUnusedLibraries();
+
+            Ok(WallpaperInfo {
+                wallpaperPath: wallpaper_path,
+                wallpaperPosition: position_str,
+            })
+        }
+    }
+
+    pub fn set_wallpaper_info(&self, wallpaper_info: &WallpaperInfo) -> Result<(), String> {
+        unsafe {
+            // Initialize COM
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            if hr.is_err() && hr != CO_E_ALREADYINITIALIZED {
+                return Err(format!("Failed to initialize COM: {:?}", hr));
+            }
+
+            // Create IDesktopWallpaper instance
+            let desktop_wallpaper: IDesktopWallpaper =
+                match CoCreateInstance(&DesktopWallpaper, None, CLSCTX_LOCAL_SERVER) {
+                    Ok(wallpaper) => wallpaper,
+                    Err(e) => {
+                        return Err(format!(
+                            "Failed to create IDesktopWallpaper instance: {:?}",
+                            e
+                        ));
+                    }
+                };
+
+            // Convert path to HSTRING
+            let wallpaper_path = HSTRING::from(wallpaper_info.wallpaperPath.clone());
+
+            // Set wallpaper for all monitors (NULL)
+            if let Err(e) = desktop_wallpaper.SetWallpaper(PCWSTR::null(), &wallpaper_path) {
+                return Err(format!("Failed to set wallpaper: {:?}", e));
+            }
+
+            // Convert position string to DESKTOP_WALLPAPER_POSITION
+            let position_val = match wallpaper_info.wallpaperPosition.to_lowercase().as_str() {
+                "center" => DWPOS_CENTER,
+                "tile" => DWPOS_TILE,
+                "stretch" => DWPOS_STRETCH,
+                "fit" => DWPOS_FIT,
+                "fill" => DWPOS_FILL,
+                "span" => DWPOS_SPAN,
+                _ => {
+                    return Err(format!(
+                        "Invalid position value: {}. Must be one of: center, tile, stretch, fit, fill, span",
+                        wallpaper_info.wallpaperPosition
+                    ));
+                }
+            };
+
+            // Set position
+            if let Err(e) = desktop_wallpaper.SetPosition(position_val) {
+                return Err(format!("Failed to set wallpaper position: {:?}", e));
+            }
+
+            // Free COM resources
+            CoFreeUnusedLibraries();
+
+            Ok(())
+        }
     }
 }

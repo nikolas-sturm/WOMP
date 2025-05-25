@@ -7,6 +7,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
+import { ThemeOption, useGlobalConfigStore } from "./globalConfig";
 
 export interface AccentColors {
   background: string;
@@ -21,7 +22,8 @@ export interface AccentColors {
 }
 
 interface ThemeState {
-  activeTheme: "dark" | "light";
+  activeTheme: ThemeOption;
+  systemPreference: "dark" | "light";
   darkTheme: Theme;
   lightTheme: Theme;
   error: string | null;
@@ -30,9 +32,8 @@ interface ThemeState {
 
 interface ThemeActions {
   getActiveTheme: () => Theme;
-  toggleTheme: () => Promise<void>;
   initThemes: () => Promise<void>;
-  setTheme: (theme: "dark" | "light") => Promise<void>;
+  setTheme: (theme: ThemeOption) => Promise<void>;
 }
 
 type ThemeStore = ThemeState & ThemeActions;
@@ -69,7 +70,8 @@ async function getThemes(): Promise<{ darkTheme: Theme; lightTheme: Theme }> {
 
 export const useThemeStore = create<ThemeStore>((set, get) => ({
   // State
-  activeTheme: "dark",
+  activeTheme: "system",
+  systemPreference: "dark",
   darkTheme: darkBase,
   lightTheme: lightBase,
   error: null,
@@ -77,53 +79,68 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
   // Actions
   getActiveTheme: () => {
     const state = get();
-    return state.activeTheme === "dark" ? state.darkTheme : state.lightTheme;
+    // If theme is system, use the system preference, otherwise use the selected theme
+    const themeToUse = state.activeTheme === "system"
+      ? state.systemPreference
+      : state.activeTheme as "dark" | "light";
+
+    return themeToUse === "dark" ? state.darkTheme : state.lightTheme;
   },
 
-  setTheme: async (theme: "dark" | "light") => {
+  setTheme: async (theme: ThemeOption) => {
     try {
-      await invoke("change_theme", { dark: theme === "dark" });
+      // Apply the theme at system level
+      await invoke("change_theme", { theme });
+
+      // Update the theme store state
       set({ activeTheme: theme });
+
+      // Save to global config
+      const globalConfigStore = useGlobalConfigStore.getState();
+      globalConfigStore.setGlobalConfig({
+        ...globalConfigStore.globalConfig,
+        theme: theme
+      });
     } catch (error) {
       console.error("Failed to set theme:", error);
       set({ error: "Failed to set theme" });
     }
   },
 
-  toggleTheme: async () => {
-    const { activeTheme } = get();
-    const newTheme = activeTheme === "dark" ? "light" : "dark";
-    return get().setTheme(newTheme);
-  },
-
   initThemes: async () => {
     set({ error: null });
     try {
-      // Try to get system preference for dark mode
+      // Get user's config first
+      const globalConfig = useGlobalConfigStore.getState().globalConfig;
+      const savedTheme = globalConfig.theme;
+
+      // Detect system preference for dark mode
       const prefersDark = window.matchMedia(
         "(prefers-color-scheme: dark)",
       ).matches;
-      const initialTheme = prefersDark ? "dark" : "light";
+      const systemPreference = prefersDark ? "dark" : "light";
 
       // Get theme colors
       const { darkTheme, lightTheme } = await getThemes();
 
-      // Update state with themes and initial preference
+      // Update state with themes and saved preference
       set({
         initialized: true,
         darkTheme,
         lightTheme,
-        activeTheme: initialTheme,
+        activeTheme: savedTheme,
+        systemPreference
       });
 
-      // Sync with system
-      await invoke("change_theme", { dark: initialTheme === "dark" });
+      // Apply the theme to the window
+      await invoke("change_theme", { theme: savedTheme });
 
-      // Listen for system theme changes
+      // Listen for system theme changes - only apply if theme is set to "system"
       window
         .matchMedia("(prefers-color-scheme: dark)")
         .addEventListener("change", (e) => {
-          get().setTheme(e.matches ? "dark" : "light");
+          const newSystemPreference = e.matches ? "dark" : "light";
+          set({ systemPreference: newSystemPreference });
         });
 
       // Listen for system accent color changes
@@ -142,12 +159,12 @@ export const useThemeStore = create<ThemeStore>((set, get) => ({
 
         // Update themes with new accent colors
         const updatedDarkTheme = {
-          ...darkBase,
+          ...darkTheme,
           colorBrandBackground: systemColors.accent_light_2,
         };
 
         const updatedLightTheme = {
-          ...lightBase,
+          ...lightTheme,
           colorBrandBackground: systemColors.accent_dark_3,
         };
 

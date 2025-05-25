@@ -1,3 +1,4 @@
+import { notify } from "@/lib/notification";
 import { useProfileStore } from "@/lib/profileStore";
 import { useDialogStyles } from "@/styles/dialog";
 import { Button, Text } from "@fluentui/react-components";
@@ -7,18 +8,14 @@ import { useCallback, useEffect } from "react";
 
 function OverwriteProfileDialog({ profileName }: { profileName: string | undefined }) {
   const classes = useDialogStyles();
-  const { updateProfiles } = useProfileStore();
+  const { initProfiles } = useProfileStore();
 
   const handleOverwriteProfile = useCallback(async () => {
     await invoke("save_current_display_layout", { profileName });
-    await updateProfiles();
-    await invoke("emit_to_window", {
-      windowName: "main",
-      event: "event",
-      payload: "profiles_updated",
-    });
+    notify("WOMP", `Profile "${profileName}" overwritten`);
+    await initProfiles();
     handleClose();
-  }, [profileName, updateProfiles]);
+  }, [profileName, initProfiles]);
 
   const handleClose = async () => {
     try {

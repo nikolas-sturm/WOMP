@@ -30,6 +30,21 @@ interface SettingsCardProps {
   onExpandedChange?: (isExpanded: boolean) => void;
 }
 
+interface SettingsCardItemProps {
+  /** Optional icon to display on the left of the header. Recommended size: 24x24 or 32x32. */
+  icon?: string;
+  /** The main title text for the item. */
+  header: string;
+  /** Optional description text displayed below the header. */
+  description?: string;
+  /** Optional control element (e.g., Switch, Dropdown, Button group) to display on the right side of the item. */
+  control?: ReactNode;
+  /** Should the item be disabled? */
+  disabled?: boolean;
+  /** Optional onClick handler for the item */
+  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+}
+
 const useStyles = makeStyles({
   card: {
     width: '100%',
@@ -97,7 +112,56 @@ const useStyles = makeStyles({
   rotated: {
     transform: 'rotate(-180deg)',
   },
+  itemRow: {
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    padding: 0,
+  },
+  itemContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1,
+  },
+  itemActionContainer: {
+    display: 'flex',
+    alignItems: 'center',
+  },
 });
+
+export const SettingsCardItem: React.FC<SettingsCardItemProps> = ({
+  icon,
+  header,
+  description,
+  control,
+  disabled = false,
+  onClick,
+}) => {
+  const styles = useStyles();
+
+  return (
+    <div
+      className={styles.itemRow}
+      onClick={onClick}
+      style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}
+    >
+      {icon && <Icon icon={icon} className={styles.icon} />}
+      <div className={styles.itemContent}>
+        <Text size={300}>{header}</Text>
+        {description && (
+          <Text size={200} style={{ color: tokens.colorNeutralForeground2 }}>
+            {description}
+          </Text>
+        )}
+      </div>
+      {control && (
+        <div className={styles.itemActionContainer}>
+          {control}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export const SettingsCard: React.FC<SettingsCardProps> = ({
   icon,
@@ -142,7 +206,11 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
 
   const renderedCardHeaderAction = (
     <div className={styles.headerActionContainer}>
-      {control}
+      {control && (
+        <div onClick={(e) => e.stopPropagation()}>
+          {control}
+        </div>
+      )}
       {expandable && (
         <Button
           appearance="transparent"

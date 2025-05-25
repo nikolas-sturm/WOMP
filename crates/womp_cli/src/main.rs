@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
-use womp::{apply_display_layout, save_current_display_layout};
+use womp::{apply_display_layout, get_global_config, save_current_display_layout};
+
 #[derive(Parser)]
 #[command(author, version, about = "Windows Output Manager Protocol CLI")]
 struct Cli {
@@ -29,20 +30,19 @@ enum Commands {
 fn main() {
     let cli = Cli::parse();
 
+    let global_config = get_global_config();
+
     match &cli.command {
         Commands::Save { profile_name } => {
-            match save_current_display_layout(profile_name, cli.debug) {
+            match save_current_display_layout(profile_name, &global_config, cli.debug) {
                 Ok(_) => println!("Successfully saved display layout: {profile_name}"),
                 Err(e) => {
                     eprintln!("Failed to save display layout: {e}");
                 }
             }
         }
-        Commands::Apply {
-            profile_name,
-            run,
-        } => {
-            match apply_display_layout(profile_name, *run, cli.debug) {
+        Commands::Apply { profile_name, run } => {
+            match apply_display_layout(profile_name, *run, &global_config, cli.debug) {
                 Ok(_) => println!("Successfully applied display layout: {profile_name}"),
                 Err(e) => {
                     eprintln!("Failed to apply display layout: {e}");

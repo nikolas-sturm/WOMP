@@ -27,15 +27,15 @@ function App() {
   const classes = useStyles();
   const initializingRef = useRef<State>("none");
 
-  const { initProfiles, selectedProfile, profiles, initialized, updateProfiles } = useProfileStore();
+  const { initProfiles, selectedProfile, profiles, initialized, activeProfile } = useProfileStore();
 
   useEffect(() => {
     initProfiles();
 
     const window = getCurrentWindow();
-    window.listen("event", (e) => {
+    window.listen("event", async (e) => {
       if (e.payload === "profiles_updated") {
-        updateProfiles();
+        await initProfiles();
       }
     });
   }, [initProfiles]);
@@ -48,7 +48,7 @@ function App() {
     if (initializingRef.current === "none") {
       console.log("Initializing tray");
       initializingRef.current = "loading";
-      createTray(profiles)
+      createTray(profiles, activeProfile)
         .then(() => {
           initializingRef.current = "initialized";
         })
@@ -57,11 +57,11 @@ function App() {
           console.error("Failed to initialize tray:", error);
         });
     } else if (initializingRef.current === "initialized") {
-      updateTray(profiles).catch(error => {
+      updateTray(profiles, activeProfile).catch(error => {
         console.error("Failed to update tray:", error);
       });
     }
-  }, [initialized, profiles]);
+  }, [initialized, profiles, activeProfile]);
 
   return (
     <>

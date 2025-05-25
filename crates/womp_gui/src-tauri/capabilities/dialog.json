@@ -7,7 +7,9 @@
     ],
     "permissions": [
         "core:default",
+        "notification:default",
         "core:window:allow-hide",
+
         "core:window:allow-start-dragging",
         "core:app:allow-default-window-icon",
         "core:window:allow-set-title"

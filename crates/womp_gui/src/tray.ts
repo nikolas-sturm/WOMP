@@ -1,16 +1,27 @@
+import { glyphToImage } from '@/lib/glyphToImage';
+import { notify } from '@/lib/notification';
+import { Profile } from '@/lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { IconMenuItem, Menu, PredefinedMenuItem, Submenu } from '@tauri-apps/api/menu';
 import { TrayIcon } from '@tauri-apps/api/tray';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { exit } from '@tauri-apps/plugin-process';
-import { glyphToImage } from './lib/glyphToImage';
-import { Profile } from './lib/types';
 
 type ProfileAction = "apply" | "save" | "delete";
 
-async function createProfileMenuItems(profiles: Profile[], action: ProfileAction) {
+async function createProfileMenuItems(profiles: Profile[], activeProfile: string | null, action: ProfileAction) {
   const actionHandlers = {
-    apply: (profile: Profile) => () => invoke("apply_display_layout", { profileName: profile.name }),
+    apply: (profile: Profile) => () => {
+      invoke("apply_display_layout", { profileName: profile.name });
+      setTimeout(() => {
+        notify("WOMP", `Profile "${profile.config?.name ?? profile.name}" applied`);
+        invoke("emit_to_window", {
+          windowName: "main",
+          event: "event",
+          payload: "profiles_updated",
+        });
+      }, 2500); // Usually still laggy after apply, so wait a bit
+    },
 
     save: (profile: Profile) => async () => {
       showDialog(`save-profile-${profile.name}`);
@@ -23,9 +34,11 @@ async function createProfileMenuItems(profiles: Profile[], action: ProfileAction
 
   return Promise.all(profiles.map(async (profile) => {
     const profileIcon = await glyphToImage(profile.config?.icon);
+    const isActive = activeProfile === profile.name;
+    const profileText = isActive ? `${profile.config?.name ?? profile.name} (Active)` : profile.config?.name ?? profile.name;
     return IconMenuItem.new({
       id: `${action}-${profile.name}`,
-      text: profile.config?.name ?? profile.name,
+      text: profileText,
       icon: profileIcon,
       action: actionHandlers[action](profile)
     });
@@ -53,10 +66,30 @@ async function showDialog(dialogType: string) {
   dialog.setFocus();
 }
 
-async function createMenu(profiles: Profile[]): Promise<Menu> {
+async function createMenu(profiles: Profile[], activeProfile: string | null): Promise<Menu> {
   const separator = await PredefinedMenuItem.new({
     text: 'separator-text',
     item: 'Separator',
+  });
+
+  const turnOffAllDisplaysMenuItem = await IconMenuItem.new({
+    id: 'turn-off-all-displays',
+    text: 'Turn Off All Displays',
+    icon: await glyphToImage("\uEA14"),
+    action: () => invoke("turn_off_all_displays")
+  });
+
+  const refreshMenuItem = await IconMenuItem.new({
+    id: 'refresh',
+    text: 'Refresh Active',
+    icon: await glyphToImage("\uE72C"),
+    action: () => {
+      invoke("emit_to_window", {
+        windowName: "main",
+        event: "event",
+        payload: "profiles_updated",
+      });
+    }
   });
 
   const configMenuItem = await IconMenuItem.new({
@@ -70,7 +103,10 @@ async function createMenu(profiles: Profile[]): Promise<Menu> {
     id: 'quit',
     text: 'Quit',
     icon: await glyphToImage("\uE711"),
-    action: () => exit()
+    action: async () => {
+      const result = await exit();
+      console.log("exit result", result);
+    }
   });
 
   if (profiles.length === 0) {
@@ -79,14 +115,14 @@ async function createMenu(profiles: Profile[]): Promise<Menu> {
     });
   }
 
-  const profileMenuItems = await createProfileMenuItems(profiles, "apply");
-  const saveProfileItems = await createProfileMenuItems(profiles, "save");
-  const deleteProfileItems = await createProfileMenuItems(profiles, "delete");
+  const profileMenuItems = await createProfileMenuItems(profiles, activeProfile, "apply");
+  const saveProfileItems = await createProfileMenuItems(profiles, activeProfile, "save");
+  const deleteProfileItems = await createProfileMenuItems(profiles, activeProfile, "delete");
 
   const saveCurrentProfileMenuItem = await IconMenuItem.new({
     id: 'new-profile',
     text: 'New Profile...',
-    icon: await glyphToImage("\uE74E"),
+    icon: await glyphToImage("\uE836"),
     action: () => showDialog("new-profile")
   });
 
@@ -102,13 +138,71 @@ async function createMenu(profiles: Profile[]): Promise<Menu> {
     items: [saveCurrentProfileMenuItem, separator, ...saveProfileItems]
   });
 
+  if (profiles.length === 1) {
+    return Menu.new({
+      items: [
+        ...profileMenuItems,
+        separator,
+        saveProfileSubmenu,
+        deleteProfileSubmenu,
+        separator,
+        turnOffAllDisplaysMenuItem,
+        separator,
+        refreshMenuItem,
+        configMenuItem,
+        separator,
+        quitMenuItem,
+      ]
+    });
+  }
+
+  const nextProfileMenuItem = await IconMenuItem.new({
+    id: 'next-profile',
+    text: 'Next Profile',
+    icon: await glyphToImage("\uE893"),
+    action: () => {
+      invoke("next_profile");
+      setTimeout(() => {
+        notify("WOMP", `Profile "${activeProfile}" applied`);
+        invoke("emit_to_window", {
+          windowName: "main",
+          event: "event",
+          payload: "profiles_updated",
+        });
+      }, 2500);
+    }
+  });
+
+  const previousProfileMenuItem = await IconMenuItem.new({
+    id: 'previous-profile',
+    text: 'Previous Profile',
+    icon: await glyphToImage("\uE892"),
+    action: () => {
+      invoke("previous_profile");
+      setTimeout(() => {
+        notify("WOMP", `Profile "${activeProfile}" applied`);
+        invoke("emit_to_window", {
+          windowName: "main",
+          event: "event",
+          payload: "profiles_updated",
+        });
+      }, 2500);
+    }
+  });
+
   return Menu.new({
     items: [
       ...profileMenuItems,
       separator,
+      nextProfileMenuItem,
+      previousProfileMenuItem,
+      separator,
       saveProfileSubmenu,
       deleteProfileSubmenu,
       separator,
+      turnOffAllDisplaysMenuItem,
+      separator,
+      refreshMenuItem,
       configMenuItem,
       separator,
       quitMenuItem,
@@ -116,15 +210,15 @@ async function createMenu(profiles: Profile[]): Promise<Menu> {
   });
 }
 
-export async function createTray(profiles: Profile[]) {
+export async function createTray(profiles: Profile[], activeProfile: string | null) {
   try {
     const tray = await TrayIcon.getById("womp-tray");
     if (tray) return;
 
     await TrayIcon.new({
       id: "womp-tray",
-      icon: await glyphToImage("\uE7F4"),
-      menu: await createMenu(profiles),
+      icon: await glyphToImage("\uEBC6"),
+      menu: await createMenu(profiles, activeProfile),
       tooltip: 'WOMP Configuration',
       menuOnLeftClick: true
     });
@@ -134,7 +228,7 @@ export async function createTray(profiles: Profile[]) {
   }
 }
 
-export async function updateTray(profiles: Profile[]) {
+export async function updateTray(profiles: Profile[], activeProfile: string | null) {
   try {
     const tray = await TrayIcon.getById("womp-tray");
     if (!tray) {
@@ -142,7 +236,7 @@ export async function updateTray(profiles: Profile[]) {
       return;
     }
 
-    await tray.setMenu(await createMenu(profiles));
+    await tray.setMenu(await createMenu(profiles, activeProfile));
   } catch (error) {
     console.error('Failed to update tray menu:', error);
     throw error;

@@ -126,10 +126,11 @@ fn get_clone_dir(source_dir: &PathBuf) -> PathBuf {
         } else {
             format!("_{}", suffix)
         };
-        clone_dir = source_dir
-            .parent()
-            .unwrap()
-            .join(format!("{}_clone{}", source_dir.file_name().unwrap().to_string_lossy(), suffix_str));
+        clone_dir = source_dir.parent().unwrap().join(format!(
+            "{}_clone{}",
+            source_dir.file_name().unwrap().to_string_lossy(),
+            suffix_str
+        ));
         if !std::fs::metadata(&clone_dir).is_err() {
             suffix += 1;
             continue;
@@ -153,11 +154,7 @@ pub fn clone_profile_dir(profile_name: &String) -> Result<String, String> {
         .map_err(|e| format!("Failed to execute xcopy command: {e}"))?;
 
     if status.success() {
-        Ok(clone_dir
-            .file_name()
-            .unwrap()
-            .to_string_lossy()
-            .to_string())
+        Ok(clone_dir.file_name().unwrap().to_string_lossy().to_string())
     } else {
         Err(format!(
             "Failed to clone profile: xcopy exited with status {}",

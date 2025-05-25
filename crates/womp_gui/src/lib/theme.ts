@@ -28,7 +28,7 @@ export function buildTheme(
   return {
     ...(dark ? darkBase : lightBase),
     fontFamilyBase:
-      '"Segoe UI", system-ui, "Segoe UI Emoji", "Segoe UI Symbol", "Segoe Fluent Icons", sans-serif',
+      '"Segoe UI", system-ui, "Segoe UI Emoji", "Segoe UI Symbol", "Segoe Fluent Icons", "Settings Fluent Icons", sans-serif',
     colorNeutralForegroundOnBrand: dark
       ? systemColors.background
       : systemColors.foreground,
@@ -45,6 +45,9 @@ export function buildTheme(
       ? d(systemColors.accent_light_2, 0.2)
       : d(systemColors.accent_dark_3, 0.2),
     colorBrandForeground1: systemColors.accent_light_2,
+    colorCompoundBrandBackground: systemColors.accent_light_2,
+    colorCompoundBrandBackgroundHover: d(systemColors.accent_light_2, 0.1),
+    colorCompoundBrandBackgroundPressed: d(systemColors.accent_light_2, 0.2),
     colorCompoundBrandStroke: systemColors.accent_light_2,
     colorCompoundBrandStrokeHover: l(systemColors.accent_light_2, 0.1),
     colorCompoundBrandStrokePressed: d(systemColors.accent_light_2, 0.3),

@@ -5,10 +5,11 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useCallback, useState } from "react";
 import sanitize from "sanitize-filename";
 import { useDialogStyles } from "@/styles/dialog";
+import { notify } from "@/lib/notification";
 
 function NewProfileDialog() {
   const classes = useDialogStyles();
-  const { profiles, updateProfiles } = useProfileStore();
+  const { profiles, initProfiles } = useProfileStore();
   const [saveDialogInput, setSaveDialogInput] = useState("");
 
   const handleSaveCurrentProfile = useCallback(
@@ -26,16 +27,12 @@ function NewProfileDialog() {
       await invoke("save_current_display_layout", {
         profileName: cleanedProfileName,
       });
-      await updateProfiles();
-      await invoke("emit_to_window", {
-        windowName: "main",
-        event: "event",
-        payload: "profiles_updated",
-      });
+      notify("WOMP", `Profile "${cleanedProfileName}" created`);
+      await initProfiles();
       setSaveDialogInput("");
       handleClose();
     },
-    [profiles, updateProfiles],
+    [profiles, initProfiles],
   );
 
   const handleClose = async () => {

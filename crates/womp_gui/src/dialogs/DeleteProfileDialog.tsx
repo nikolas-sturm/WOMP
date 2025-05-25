@@ -1,4 +1,5 @@
 import { useProfileStore } from "@/lib/profileStore";
+import { notify } from "@/lib/notification";
 import { useDialogStyles } from "@/styles/dialog";
 import { Button, Text } from "@fluentui/react-components";
 import { invoke } from "@tauri-apps/api/core";
@@ -7,18 +8,15 @@ import { useCallback, useEffect } from "react";
 
 function DeleteProfileDialog({ profileName }: { profileName: string | undefined }) {
   const classes = useDialogStyles();
-  const { updateProfiles } = useProfileStore();
+  const { initProfiles } = useProfileStore();
 
   const handleDeleteProfile = useCallback(async () => {
     await invoke("delete_profile", { profileName });
-    await updateProfiles();
-    await invoke("emit_to_window", {
-      windowName: "main",
-      event: "event",
-      payload: "profiles_updated",
-    });
+    notify("WOMP", `Profile "${profileName}" deleted`);
+    await initProfiles();
+
     handleClose();
-  }, [profileName, updateProfiles]);
+  }, [profileName, initProfiles]);
 
   const handleClose = async () => {
     try {

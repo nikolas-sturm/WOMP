@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use tauri::command;
-use womp::serde_types::config::Config;
+use womp::serde_types::{config::Config, global_config::GlobalConfig};
 
 #[derive(Serialize, Deserialize)]
 pub struct Profile {
@@ -19,13 +19,59 @@ pub fn get_profiles() -> Result<Vec<Profile>, String> {
 }
 
 #[command]
+pub fn get_active_profile() -> Result<Option<String>, String> {
+    let global_config = get_global_config().unwrap();
+    womp::get_active_profile(&global_config)
+}
+
+#[command]
+pub fn next_profile() -> Result<(), String> {
+    let profiles = get_profiles().unwrap();
+    let active_profile = get_active_profile().unwrap();
+    if let Some(active_profile) = active_profile {
+        let active_profile_index = profiles.iter().position(|p| p.name == active_profile).unwrap();
+        let next_profile_index = (active_profile_index + 1) % profiles.len();
+        let next_profile = profiles[next_profile_index].name.clone();
+        apply_display_layout(next_profile)
+    } else {
+        Ok(())
+    }
+}
+
+#[command]
+pub fn previous_profile() -> Result<(), String> {
+    let profiles = get_profiles().unwrap();
+    let active_profile = get_active_profile().unwrap();
+    if let Some(active_profile) = active_profile {
+        let active_profile_index = profiles.iter().position(|p| p.name == active_profile).unwrap();
+        let previous_profile_index = (active_profile_index + profiles.len() - 1) % profiles.len();
+        let previous_profile = profiles[previous_profile_index].name.clone();
+        apply_display_layout(previous_profile)
+    } else {
+        Ok(())
+    }
+}
+
+#[command]
+pub fn get_global_config() -> Result<GlobalConfig, String> {
+    Ok(womp::get_global_config())
+}
+
+#[command]
+pub fn set_global_config(global_config: GlobalConfig) -> Result<(), String> {
+    womp::set_global_config(&global_config)
+}
+
+#[command]
 pub fn apply_display_layout(profile_name: String) -> Result<(), String> {
-    womp::apply_display_layout(&profile_name, true, false)
+    let global_config = get_global_config().unwrap();
+    womp::apply_display_layout(&profile_name, true, &global_config, false)
 }
 
 #[command]
 pub fn save_current_display_layout(profile_name: String) -> Result<(), String> {
-    womp::save_current_display_layout(&profile_name, false)
+    let global_config = get_global_config().unwrap();
+    womp::save_current_display_layout(&profile_name, &global_config, false)
 }
 
 #[command]
@@ -74,4 +120,9 @@ pub fn clone_profile(profile_name: String) -> Result<String, String> {
 #[command]
 pub fn open_profile_dir(profile_name: String) -> Result<(), String> {
     womp::config_manager::open_profile_dir(&profile_name)
+}
+
+#[command]
+pub fn turn_off_all_displays() -> Result<(), String> {
+    womp::turn_off_all_displays(false)
 }

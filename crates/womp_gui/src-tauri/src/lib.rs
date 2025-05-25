@@ -1,7 +1,11 @@
+use notify::{RecursiveMode, Result as NotifyResult, Watcher, recommended_watcher};
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::Once;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Emitter;
 use tauri::{AppHandle, Manager, WebviewWindowBuilder};
+use tauri_plugin_autostart::MacosLauncher;
 use window_vibrancy::*;
 use windows::Foundation::TypedEventHandler;
 use windows::UI::ViewManagement::{UIColorType, UISettings};
@@ -13,6 +17,9 @@ struct ColorChangeHandler {
     _settings: UISettings, // Keep UISettings alive
     _registration: i64,    // Keep event registration token alive
 }
+
+// Thread-safe static for event emission control
+static COLOR_EVENTS_ENABLED: AtomicBool = AtomicBool::new(true);
 
 // Static holder for our handler
 static INIT: Once = Once::new();
@@ -28,6 +35,11 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
             let main_window = WebviewWindowBuilder::new(
@@ -71,15 +83,22 @@ pub fn run() {
             // Set up color change listener
             setup_color_change_listener(app.app_handle().clone());
 
+            // Set up profiles directory watcher
+            setup_profiles_dir_watcher(app.app_handle().clone());
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             change_theme,
             get_system_colors,
             emit_to_window,
+            set_color_events_enabled,
             external::apply_display_layout,
             external::save_current_display_layout,
             external::get_profiles,
+            external::get_active_profile,
+            external::next_profile,
+            external::previous_profile,
             external::get_config_dir,
             external::get_profiles_dir,
             external::get_profile_dir,
@@ -89,10 +108,58 @@ pub fn run() {
             external::delete_profile,
             external::clone_profile,
             external::open_profile_dir,
+            external::turn_off_all_displays,
+            external::get_global_config,
+            external::set_global_config,
         ])
         .plugin(tauri_plugin_opener::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn setup_profiles_dir_watcher(app_handle: AppHandle) {
+    // Create a thread-local watcher to avoid dropping it
+    std::thread::spawn(move || {
+        // Get the config directory and join with "WOMP/profiles"
+        if let Ok(config_dir) = app_handle.path().config_dir() {
+            let profiles_dir = config_dir.join("WOMP").join("profiles");
+
+            // Create the event handler
+            let event_handler = move |res: NotifyResult<notify::Event>| {
+                match res {
+                    Ok(_) => {
+                        // When any file system event occurs, emit a "profiles_updated" event
+                        app_handle
+                            .emit_to("main", "event", "profiles_updated")
+                            .unwrap_or_else(|e| {
+                                eprintln!("Failed to emit profiles_updated event: {}", e);
+                            });
+                    }
+                    Err(e) => eprintln!("Watch error: {:?}", e),
+                }
+            };
+
+            // Create a new watcher with the event handler
+            match recommended_watcher(event_handler) {
+                Ok(mut watcher) => {
+                    // Watch the profiles directory recursively
+                    if let Err(e) =
+                        watcher.watch(Path::new(&profiles_dir), RecursiveMode::Recursive)
+                    {
+                        eprintln!("Failed to watch profiles directory: {}", e);
+                    } else {
+                        println!("Watching profiles directory: {:?}", profiles_dir);
+
+                        // Keep the watcher alive
+                        std::thread::park();
+                    }
+                }
+                Err(e) => eprintln!("Failed to create watcher: {}", e),
+            }
+        } else {
+            eprintln!("Failed to get app config directory");
+        }
+    });
 }
 
 fn setup_color_change_listener(app_handle: AppHandle) {
@@ -107,9 +174,12 @@ fn setup_color_change_listener(app_handle: AppHandle) {
         // Register the event handler
         let registration = settings
             .ColorValuesChanged(&TypedEventHandler::new(move |_, _| {
-                // When colors change, emit an event to the frontend
-                let colors = get_system_colors();
-                handle_clone.emit("system-colors-changed", colors).ok();
+                // Only emit events if color events are enabled
+                if COLOR_EVENTS_ENABLED.load(Ordering::Relaxed) {
+                    // When colors change, emit an event to the frontend
+                    let colors = get_system_colors();
+                    handle_clone.emit("system-colors-changed", colors).ok();
+                }
                 Ok(())
             }))
             .expect("Failed to register color change handler");
@@ -127,10 +197,32 @@ fn setup_color_change_listener(app_handle: AppHandle) {
 }
 
 #[tauri::command]
-fn change_theme(handle: AppHandle, dark: bool) {
-    let window = handle.get_webview_window("main").unwrap();
+fn set_color_events_enabled(enabled: bool) -> Result<(), String> {
+    COLOR_EVENTS_ENABLED.store(enabled, Ordering::Relaxed);
+    Ok(())
+}
 
-    apply_mica(&window, Some(dark)).expect("Failed to apply mica");
+#[tauri::command]
+fn change_theme(handle: AppHandle, theme: String) {
+    let windows = handle.windows();
+
+    let dark = match theme.as_str() {
+        "dark" => Some(true),
+        "light" => Some(false),
+        _ => None,
+    };
+
+    let tauri_theme = match theme.as_str() {
+        "dark" => Some(tauri::Theme::Dark),
+        "light" => Some(tauri::Theme::Light),
+        _ => None,
+    };
+
+    for (_, window) in windows {
+        let _ = window.set_theme(tauri_theme);
+
+        apply_mica(&window, dark).expect("Failed to apply mica");
+    }
 }
 
 #[tauri::command]

@@ -6,6 +6,8 @@ use windows::Win32::Devices::Display::{
     DISPLAYCONFIG_TARGET_DEVICE_NAME,
 };
 pub mod config;
+pub mod optional_info;
+pub mod global_config;
 pub mod win32_additional_info;
 pub mod win32_bool;
 pub mod win32_i32_tuple_struct;
@@ -24,6 +26,8 @@ pub struct Display {
     pub pathInfo: DISPLAYCONFIG_PATH_INFO,
     pub modeInfo: win32_mode_info::ModeInfo,
     pub additionalInfo: win32_additional_info::AdditionalInfo,
+    #[serde(skip_serializing_if = "optional_info::OptionalInfo::is_empty")]
+    pub optionalInfo: optional_info::OptionalInfo,
 }
 
 impl Display {
@@ -33,6 +37,7 @@ impl Display {
         source_mode: &DISPLAYCONFIG_MODE_INFO,
         target_name: &DISPLAYCONFIG_TARGET_DEVICE_NAME,
         adapter_name: &DISPLAYCONFIG_ADAPTER_NAME,
+        optional_info: &optional_info::OptionalInfo,
     ) -> Self {
         Display {
             pathInfo: *path,
@@ -44,6 +49,7 @@ impl Display {
                 target: *target_name,
                 adapter: *adapter_name,
             },
+            optionalInfo: *optional_info,
         }
     }
 
@@ -63,5 +69,35 @@ impl Display {
             self.additionalInfo.target,
             self.additionalInfo.adapter,
         )
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WallpaperInfo {
+    pub wallpaperPath: String,
+    pub wallpaperPosition: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GlobalInfo {
+    pub iconSize: Option<i32>,
+    pub wallpaperInfo: Option<WallpaperInfo>,
+}
+
+impl GlobalInfo {
+    pub fn from(iconSize: Option<i32>, wallpaperInfo: Option<WallpaperInfo>) -> Self {
+        GlobalInfo { iconSize, wallpaperInfo }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct DisplayLayout {
+    pub globalInfo: GlobalInfo,
+    pub displays: Vec<Display>,
+}
+
+impl DisplayLayout {
+    pub fn from(displays: Vec<Display>, globalInfo: GlobalInfo) -> Self {
+        DisplayLayout { globalInfo, displays }
     }
 }

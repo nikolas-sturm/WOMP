@@ -1,3 +1,8 @@
+@font-face {
+    font-family: "Settings Fluent Icons";
+    src: url("C:/Windows/SystemResources/Windows.UI.SettingsAppThreshold/SystemSettings/Assets/Fonts/SettingsIcons.ttf");
+}
+
 :root {
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -17,6 +22,7 @@ body {
 
 * {
   box-sizing: border-box;
+  user-select: none;
 }
 
 button,

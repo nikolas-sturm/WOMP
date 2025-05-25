@@ -1,8 +1,9 @@
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Button, Label, Link, makeStyles, Text, Title2, tokens } from "@fluentui/react-components";
+import { useGlobalConfigStore } from "@/lib/globalConfig";
+import { Button, Label, Link, makeStyles, Switch, SwitchOnChangeData, Text, Title2, tokens } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
 import { Icon } from "./DynamicIcon";
-import { SettingsCard } from "./SettingsCard";
+import { SettingsCard, SettingsCardItem } from "./SettingsCard";
+import { ThemeSelect } from "./ThemeSelect";
 
 const useStyles = makeStyles({
   root: {
@@ -70,6 +71,14 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalM,
     alignItems: "center",
   },
+  switch: {
+    "& > *": {
+      cursor: "default !important",
+    },
+    "&:hover > .fui-Switch__input:not(:checked) ~ .fui-Switch__indicator": {
+      backgroundColor: tokens.colorNeutralBackground1Hover,
+    },
+  }
 });
 
 enum SourceCodeText {
@@ -82,6 +91,7 @@ export function Settings() {
   const [justCopied, setJustCopied] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [sourceCodeText, setSourceCodeText] = useState(SourceCodeText.Default);
+  const { globalConfig, setGlobalConfig } = useGlobalConfigStore();
 
   useEffect(() => {
     if (justCopied) {
@@ -102,6 +112,33 @@ export function Settings() {
     }
   }, [justCopied]);
 
+  const handleOptionToggle = async (event: React.ChangeEvent<HTMLInputElement>, data: SwitchOnChangeData) => {
+    switch (event.target.id) {
+      case "save_dpi_scale":
+        setGlobalConfig({ ...globalConfig, save_dpi_scale: data.checked });
+        break;
+      case "autostart":
+        setGlobalConfig({ ...globalConfig, autostart: data.checked });
+        break;
+      case "save_icon_size":
+        setGlobalConfig({ ...globalConfig, save_icon_size: data.checked });
+        break;
+      case "save_hdr_state":
+        if (!data.checked) {
+          setGlobalConfig({ ...globalConfig, save_hdr_state: false, save_sdr_white_level: false });
+        } else {
+          setGlobalConfig({ ...globalConfig, save_hdr_state: data.checked });
+        }
+        break;
+      case "save_sdr_white_level":
+        setGlobalConfig({ ...globalConfig, save_sdr_white_level: data.checked });
+        break;
+      case "save_wallpaper_info":
+        setGlobalConfig({ ...globalConfig, save_wallpaper_info: data.checked });
+        break;
+    }
+  };
+
   return (
     <div className={classes.root}>
       <Title2>Settings</Title2>
@@ -110,15 +147,109 @@ export function Settings() {
         <SettingsCard
           header="App theme"
           icon={"\uE790"}
-          control={<ThemeToggle />}
+          control={<ThemeSelect />}
           description="Select which app theme to display"
         />
+        <SettingsCard
+          header="Run at startup"
+          control={
+            <Switch
+              className={classes.switch}
+              id="autostart"
+              checked={globalConfig.autostart}
+              onChange={handleOptionToggle}
+              label={globalConfig.autostart ? "On" : "Off"}
+              labelPosition="before"
+            />
+          }
+          description="WOMP will launch automatically"
+        />
+      </div>
+      <div className={classes.section}>
+        <Label>Experimental settings</Label>
+        <SettingsCard
+          header="Save DPI/Display Scale"
+          icon={"\uE58E"}
+          control={
+            <Switch
+              id="save_dpi_scale"
+              className={classes.switch}
+              checked={globalConfig.save_dpi_scale}
+              onChange={handleOptionToggle}
+              label={globalConfig.save_dpi_scale ? "On" : "Off"}
+              labelPosition="before"
+            />
+          }
+          description="Store the display zoom percentage for each profile"
+        />
+        <SettingsCard
+          header="Save Desktop Icon Size"
+          icon={"\uE8A9"}
+          control={
+            <Switch
+              id="save_icon_size"
+              className={classes.switch}
+              checked={globalConfig.save_icon_size}
+              onChange={handleOptionToggle}
+              label={globalConfig.save_icon_size ? "On" : "Off"}
+              labelPosition="before"
+            />
+          }
+          description="Store the desktop icon size for each profile"
+        />
+        <SettingsCard
+          header="Save Wallpaper Info"
+          icon={"\uE91B"}
+          control={
+            <Switch
+              id="save_wallpaper_info"
+              className={classes.switch}
+              checked={globalConfig.save_wallpaper_info}
+              onChange={handleOptionToggle}
+              label={globalConfig.save_wallpaper_info ? "On" : "Off"}
+              labelPosition="before"
+            />
+          }
+          description="Store the wallpaper image and fit for each profile"
+        />
+        <SettingsCard
+          header="Save HDR State"
+          icon={"\uEA7F"}
+          expandable
+          control={
+            <Switch
+              id="save_hdr_state"
+              className={classes.switch}
+              checked={globalConfig.save_hdr_state}
+              onChange={handleOptionToggle}
+              label={globalConfig.save_hdr_state ? "On" : "Off"}
+              labelPosition="before"
+            />
+          }
+          description="Store the display HDR state for each profile"
+        >
+          <SettingsCardItem
+            header="Save SDR White Level"
+            disabled={!globalConfig.save_hdr_state}
+            control={
+              <Switch
+                id="save_sdr_white_level"
+                className={classes.switch}
+                checked={globalConfig.save_sdr_white_level}
+                onChange={handleOptionToggle}
+                label={globalConfig.save_sdr_white_level ? "On" : "Off"}
+                labelPosition="before"
+              />
+            }
+            description="Store the display SDR white level for each profile"
+          />
+        </SettingsCard>
       </div>
       <div className={classes.section}>
         <Label>About</Label>
         <SettingsCard
           header="WOMP Config UI"
-          icon={"\uE7F4"}
+          icon={"\uEBC6"}
           control="1.0.0"
           description="© 2025 Nikolas Sturm. All rights reserved."
           expandable
