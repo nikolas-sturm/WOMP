@@ -11,6 +11,7 @@ export interface GlobalConfig {
   save_hdr_state: boolean;
   save_sdr_white_level: boolean;
   save_wallpaper_info: boolean;
+  save_audio_output: boolean;
 }
 
 interface GlobalConfigStore {
@@ -28,6 +29,7 @@ export const useGlobalConfigStore = create<GlobalConfigStore>((set) => ({
     save_hdr_state: false,
     save_sdr_white_level: false,
     save_wallpaper_info: false,
+    save_audio_output: false,
   },
   getGlobalConfig: async () => {
     const globalConfig = await invoke<GlobalConfig>("get_global_config");

@@ -33,7 +33,7 @@ export const NavigationView = () => {
   const [searchInput, setSearchInput] = useState("");
   const [shouldFocusSearch, setShouldFocusSearch] = useState(false);
   const [saveDialogInput, setSaveDialogInput] = useState("");
-  const { profiles, selectedProfile, setSelectedProfile, updateProfiles } =
+  const { profiles, selectedProfile, setSelectedProfile, initProfiles } =
     useProfileStore();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [profileExistsDialogOpen, setProfileExistsDialogOpen] = useState(false);
@@ -107,8 +107,8 @@ export const NavigationView = () => {
   }, []);
 
   const refreshProfiles = useCallback(() => {
-    updateProfiles();
-  }, [updateProfiles]);
+    initProfiles();
+  }, [initProfiles]);
 
   const handleSaveCurrentProfile = useCallback(
     async (profileName: string, overwrite: boolean = false) => {
@@ -126,14 +126,14 @@ export const NavigationView = () => {
       await invoke("save_current_display_layout", {
         profileName: cleanedProfileName,
       });
-      const newProfiles = await updateProfiles();
+      const newProfiles = await initProfiles();
       setSelectedProfile(
         newProfiles.find((profile) => profile.name === profileName) ?? null,
       );
       setSaveDialogInput("");
       setSaveDialogOpen(false);
     },
-    [profiles, updateProfiles, setSelectedProfile],
+    [profiles, setSelectedProfile, initProfiles],
   );
 
   const handleProfileExistsDialogOpenChange = useCallback(

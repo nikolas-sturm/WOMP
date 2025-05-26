@@ -9,6 +9,7 @@ pub struct GlobalConfig {
     pub save_hdr_state: bool,
     pub save_sdr_white_level: bool,
     pub save_wallpaper_info: bool,
+    pub save_audio_output: bool,
 }
 
 impl GlobalConfig {
@@ -21,6 +22,7 @@ impl GlobalConfig {
             save_hdr_state: false,
             save_sdr_white_level: false,
             save_wallpaper_info: false,
+            save_audio_output: false,
         }
     }
 }

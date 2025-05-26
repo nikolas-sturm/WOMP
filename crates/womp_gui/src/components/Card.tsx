@@ -1,7 +1,7 @@
 import {
   Button,
-  Card,
   CardHeader,
+  Card as FluentCard,
   makeStyles,
   mergeClasses,
   Text,
@@ -11,7 +11,7 @@ import { ChevronUpRegular } from '@fluentui/react-icons';
 import React, { ReactNode, useState } from 'react';
 import { Icon } from './DynamicIcon';
 
-interface SettingsCardProps {
+interface CardProps {
   /** Optional icon to display on the left of the header. Recommended size: 24x24 or 32x32. */
   icon?: string;
   /** The main title text for the card. */
@@ -30,11 +30,9 @@ interface SettingsCardProps {
   onExpandedChange?: (isExpanded: boolean) => void;
 }
 
-interface SettingsCardItemProps {
-  /** Optional icon to display on the left of the header. Recommended size: 24x24 or 32x32. */
-  icon?: string;
+interface CardItemProps {
   /** The main title text for the item. */
-  header: string;
+  header?: string;
   /** Optional description text displayed below the header. */
   description?: string;
   /** Optional control element (e.g., Switch, Dropdown, Button group) to display on the right side of the item. */
@@ -43,11 +41,14 @@ interface SettingsCardItemProps {
   disabled?: boolean;
   /** Optional onClick handler for the item */
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
+  /** Should the control be full width? */
+  fullWidthControl?: boolean;
 }
 
 const useStyles = makeStyles({
   card: {
     width: '100%',
+    flexShrink: 0,
     // Example: maxWidth: '700px', // Adjust as needed
     backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.05)",
     boxShadow: "none",
@@ -82,6 +83,7 @@ const useStyles = makeStyles({
   // Styles for the content area that appears when the card is expanded
   expandedContent: {
     padding: 0,
+    flexShrink: 0,
     transition: 'max-height 0.3s ease',
     maxHeight: '1000px',
     overflow: 'hidden',
@@ -94,7 +96,10 @@ const useStyles = makeStyles({
     transition: 'max-height 0.3s ease',
   },
   contentWrapper: {
-    padding: tokens.spacingHorizontalL,
+    paddingLeft: tokens.spacingHorizontalL,
+    paddingRight: tokens.spacingHorizontalL,
+    paddingTop: tokens.spacingVerticalS,
+    paddingBottom: tokens.spacingVerticalS,
     borderTop: "1px solid var(--colorNeutralBackground1)",
     transition: 'transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease',
     "&:hover": {
@@ -127,14 +132,17 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
   },
+  fullWidthControl: {
+    width: '100%',
+  },
 });
 
-export const SettingsCardItem: React.FC<SettingsCardItemProps> = ({
-  icon,
+export const CardItem: React.FC<CardItemProps> = ({
   header,
   description,
   control,
   disabled = false,
+  fullWidthControl = false,
   onClick,
 }) => {
   const styles = useStyles();
@@ -143,11 +151,14 @@ export const SettingsCardItem: React.FC<SettingsCardItemProps> = ({
     <div
       className={styles.itemRow}
       onClick={onClick}
-      style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}
+      style={{
+        opacity: disabled ? 0.5 : 1,
+        pointerEvents: disabled ? 'none' : 'auto',
+        paddingLeft: fullWidthControl ? undefined : "36px",
+      }}
     >
-      {icon && <Icon icon={icon} className={styles.icon} />}
       <div className={styles.itemContent}>
-        <Text size={300}>{header}</Text>
+        {header && <Text size={300}>{header}</Text>}
         {description && (
           <Text size={200} style={{ color: tokens.colorNeutralForeground2 }}>
             {description}
@@ -155,7 +166,7 @@ export const SettingsCardItem: React.FC<SettingsCardItemProps> = ({
         )}
       </div>
       {control && (
-        <div className={styles.itemActionContainer}>
+        <div className={mergeClasses(styles.itemActionContainer, fullWidthControl && styles.fullWidthControl)}>
           {control}
         </div>
       )}
@@ -163,7 +174,7 @@ export const SettingsCardItem: React.FC<SettingsCardItemProps> = ({
   );
 };
 
-export const SettingsCard: React.FC<SettingsCardProps> = ({
+export const Card: React.FC<CardProps> = ({
   icon,
   header,
   description,
@@ -231,7 +242,7 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
   );
 
   return (
-    <Card className={styles.card} style={{ '--hoverBackground': hoverBackground } as React.CSSProperties}>
+    <FluentCard className={styles.card} style={{ '--hoverBackground': hoverBackground } as React.CSSProperties}>
       <CardHeader
         className={styles.cardHeader}
         header={renderedCardHeaderContent}
@@ -266,9 +277,6 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
                 key={index}
                 onClick={wrapperOnClick}
                 style={{
-                  paddingLeft: icon
-                    ? `calc(${tokens.spacingHorizontalL} + 24px + ${tokens.spacingHorizontalM})`
-                    : tokens.spacingHorizontalL,
                   opacity: isExpanded ? 1 : 0,
                   transform: isExpanded ? 'translateY(0)' : 'translateY(-20px)',
                 }}
@@ -282,6 +290,6 @@ export const SettingsCard: React.FC<SettingsCardProps> = ({
           })}
         </div>
       )}
-    </Card>
+    </FluentCard>
   );
 };

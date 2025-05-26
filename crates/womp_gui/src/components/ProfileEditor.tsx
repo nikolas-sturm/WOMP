@@ -14,17 +14,17 @@ import {
   DialogTitle,
   DialogTrigger,
   Input,
-  Label,
   Popover,
   PopoverSurface,
   PopoverTrigger,
   Text,
   Textarea,
-  mergeClasses,
+  mergeClasses
 } from "@fluentui/react-components";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
+import { Card, CardItem } from "./Card";
 
 type EmojiData = {
   fallback: string;
@@ -58,11 +58,10 @@ const useProfileEditorStore = create<ProfileEditorStore>((set) => ({
 
 export function ProfileEditor() {
   const styles = useProfileEditorStyles();
-  const { selectedProfile, initProfiles, updateProfiles, setSelectedProfile } =
+  const { selectedProfile, initProfiles, setSelectedProfile } =
     useProfileStore();
   const { tempProfile, setTempProfile } = useProfileEditorStore();
 
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   useEffect(() => {
@@ -71,14 +70,9 @@ export function ProfileEditor() {
     }
   }, [selectedProfile, setTempProfile]);
 
-  const openDeleteDialog = () => {
-    setDeleteDialogOpen(true);
-  };
-
   const handleDeleteProfile = async () => {
     await invoke("delete_profile", { profileName: tempProfile?.name });
-    updateProfiles();
-    setDeleteDialogOpen(false);
+    initProfiles();
     setSelectedProfile(null);
   };
 
@@ -92,7 +86,7 @@ export function ProfileEditor() {
     const new_profile_name: string = await invoke("clone_profile", {
       profileName: tempProfile?.name,
     });
-    const new_profiles = await updateProfiles();
+    const new_profiles = await initProfiles();
     setSelectedProfile(
       new_profiles.find((profile) => profile.name === new_profile_name) ?? null,
     );
@@ -114,18 +108,15 @@ export function ProfileEditor() {
       });
     }
     if (tempProfile.config) {
-      console.log("saving profile", tempProfile.name, tempProfile.config);
       await invoke("write_display_config", {
         config: tempProfile.config,
         profileName: tempProfile.name,
       });
     }
-    const profiles = await updateProfiles();
-    if (nameChanged) {
-      setSelectedProfile(
-        profiles.find((profile) => profile.name === tempProfile.name) ?? null,
-      );
-    }
+    const profiles = await initProfiles();
+    setSelectedProfile(
+      profiles.find((profile) => profile.name === tempProfile.name) ?? null,
+    );
   };
 
   const handleApplyProfile = async () => {
@@ -148,7 +139,7 @@ export function ProfileEditor() {
         profileName: tempProfile.name,
       });
     }
-    const profiles = await updateProfiles();
+    const profiles = await initProfiles();
     if (tempProfile && nameChanged) {
       setSelectedProfile(
         profiles.find((profile) => profile.name === tempProfile.name) ?? null,
@@ -174,130 +165,170 @@ export function ProfileEditor() {
     setPopoverOpen(false);
   };
 
+  if (selectedProfile === "settings") {
+    return null;
+  }
+
   return (
     <div className={styles.root}>
       {tempProfile ? (
         <div className={styles.editorContainer}>
-          <ProfileName profile={tempProfile} className={styles.title} />
+          <ProfileName showIcon profile={selectedProfile} className={styles.title} />
 
-          <div className={styles.fieldsContainer}>
-            <div className={styles.fieldContainer}>
-              <Label>Folder Name</Label>
-              <Input
-                className={mergeClasses(styles.input, styles.nameInput)}
-                value={tempProfile?.name}
-                onChange={(e) => {
-                  setTempProfile({
-                    ...tempProfile,
-                    name: e.target.value,
-                  });
-                }}
-              />
-            </div>
-
-            <div className={styles.nameAndIconContainer}>
-              <div className={styles.fieldContainer}>
-                <Label>Icon</Label>
-                <Popover
-                  positioning={"after"}
-                  open={popoverOpen}
-                  onOpenChange={(_, data) => setPopoverOpen(data.open)}
-                >
-                  <PopoverTrigger>
-                    <Button
-                      className={mergeClasses(styles.emojiButton, styles.input)}
-                    >
-                      {tempProfile?.config?.icon ?? ""}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverSurface className={styles.emojiPicker}>
-                    <Picker data={data} onEmojiSelect={handleEmojiSelect} />
-                  </PopoverSurface>
-                </Popover>
-              </div>
-              <div
-                className={mergeClasses(styles.fieldContainer, styles.flexGrow)}
-              >
-                <Label>Name</Label>
-                <Input
-                  className={styles.input}
-                  value={tempProfile?.config?.name ?? ""}
-                  onChange={(e) => {
-                    setTempProfile({
-                      ...tempProfile,
-                      config: {
-                        ...tempProfile.config,
+          <div className={styles.section}>
+            <Card
+              header="Profile ID"
+              icon={"\uF439"}
+              expandable
+            >
+              <CardItem
+                header="Internal ID"
+                description="Enter an ID for the profile"
+                control={
+                  <Input
+                    className={mergeClasses(styles.input, styles.nameInput)}
+                    value={tempProfile?.name}
+                    onChange={(e) => {
+                      setTempProfile({
+                        ...tempProfile,
                         name: e.target.value,
-                      } as Config,
-                    });
-                  }}
-                />
-              </div>
-            </div>
+                      });
+                    }}
+                  />
+                }
+              />
+            </Card>
 
-            <div className={styles.fieldContainer}>
-              <Label>Description</Label>
-              <Textarea
-                value={tempProfile?.config?.description ?? ""}
-                rows={3}
-                className={styles.input}
-                onChange={(e) => {
-                  if (tempProfile?.config) {
-                    setTempProfile({
-                      ...tempProfile,
-                      config: {
-                        ...tempProfile.config,
-                        description: e.target.value,
-                      } as Config,
-                    });
-                  }
-                }}
+            <Card
+              header="Icon & Name"
+              icon={"\uE932"}
+              expandable
+            >
+              <CardItem
+                header="Icon"
+                description="Select an icon for the profile"
+                control={
+                  <Popover
+                    positioning={"after"}
+                    open={popoverOpen}
+                    onOpenChange={(_, data) => setPopoverOpen(data.open)}
+                  >
+                    <PopoverTrigger>
+                      <Button
+                        className={mergeClasses(styles.emojiButton, styles.input)}
+                      >
+                        {tempProfile?.config?.icon ?? ""}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverSurface className={styles.emojiPicker}>
+                      <Picker data={data} onEmojiSelect={handleEmojiSelect} />
+                    </PopoverSurface>
+                  </Popover>
+                }
               />
-            </div>
+              <CardItem
+                header="Name"
+                description="Enter a name for the profile"
+                control={
+                  <Input
+                    className={styles.input}
+                    value={tempProfile?.config?.name ?? ""}
+                    onChange={(e) => {
+                      setTempProfile({
+                        ...tempProfile,
+                        config: {
+                          ...tempProfile.config,
+                          name: e.target.value,
+                        } as Config,
+                      });
+                    }}
+                  />
+                }
+              />
+            </Card>
 
-            <Label className={styles.sectionTitle}>Run</Label>
-            <div className={styles.fieldContainer}>
-              <Label>Before</Label>
-              <Input
-                className={styles.input}
-                value={tempProfile?.config?.run?.before ?? ""}
-                onChange={(e) => {
-                  if (tempProfile?.config) {
-                    setTempProfile({
-                      ...tempProfile,
-                      config: {
-                        ...tempProfile.config,
-                        run: {
-                          ...tempProfile.config.run,
-                          before: e.target.value,
-                        } as Run,
-                      } as Config,
-                    });
-                  }
-                }}
+            <Card
+              header="Description"
+              icon={"\uE8E4"}
+              expandable
+            >
+              <CardItem
+                fullWidthControl
+                control={
+                  <Textarea
+                    value={tempProfile?.config?.description ?? ""}
+                    rows={3}
+                    className={mergeClasses(styles.input, styles.textArea)}
+                    onChange={(e) => {
+                      if (tempProfile?.config) {
+                        setTempProfile({
+                          ...tempProfile,
+                          config: {
+                            ...tempProfile.config,
+                            description: e.target.value,
+                          } as Config,
+                        });
+                      }
+                    }}
+                  />
+                }
               />
-            </div>
-            <div className={styles.fieldContainer}>
-              <Label>After</Label>
-              <Input
-                className={styles.input}
-                value={tempProfile?.config?.run?.after ?? ""}
-                onChange={(e) => {
-                  if (tempProfile?.config) {
-                    setTempProfile({
-                      ...tempProfile,
-                      config: {
-                        ...tempProfile.config,
-                        run: {
-                          ...tempProfile.config.run,
-                          after: e.target.value,
-                        } as Run,
-                      } as Config,
-                    });
-                  }
-                }}
+            </Card>
+
+            <Card
+              header="Run"
+              icon={"\uE756"}
+              expandable
+            >
+              <CardItem
+                header="Before"
+                description="Enter a command to run before the profile is applied"
+                control={
+                  <Input
+                    className={styles.input}
+                    value={tempProfile?.config?.run?.before ?? ""}
+                    onChange={(e) => {
+                      if (tempProfile?.config) {
+                        setTempProfile({
+                          ...tempProfile,
+                          config: {
+                            ...tempProfile.config,
+                            run: {
+                              ...tempProfile.config.run,
+                              before: e.target.value,
+                            } as Run,
+                          } as Config,
+                        });
+                      }
+                    }}
+                  />
+                }
               />
-            </div>
+              <CardItem
+                header="After"
+                description="Enter a command to run after the profile is applied"
+                control={
+                  <Input
+                    className={styles.input}
+                    value={tempProfile?.config?.run?.after ?? ""}
+                    onChange={(e) => {
+                      if (tempProfile?.config) {
+                        setTempProfile({
+                          ...tempProfile,
+                          config: {
+                            ...tempProfile.config,
+                            run: {
+                              ...tempProfile.config.run,
+                              after: e.target.value,
+                            } as Run,
+                          } as Config,
+                        });
+                      }
+                    }}
+                  />
+                }
+              />
+            </Card>
           </div>
           <div className={styles.controlsContainer}>
             <div className={styles.controlsSection}>

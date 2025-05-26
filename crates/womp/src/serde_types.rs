@@ -82,11 +82,12 @@ pub struct WallpaperInfo {
 pub struct GlobalInfo {
     pub iconSize: Option<i32>,
     pub wallpaperInfo: Option<WallpaperInfo>,
+    pub audioOutput: Option<String>,
 }
 
 impl GlobalInfo {
-    pub fn from(iconSize: Option<i32>, wallpaperInfo: Option<WallpaperInfo>) -> Self {
-        GlobalInfo { iconSize, wallpaperInfo }
+    pub fn from(iconSize: Option<i32>, wallpaperInfo: Option<WallpaperInfo>, audioOutput: Option<String>) -> Self {
+        GlobalInfo { iconSize, wallpaperInfo, audioOutput }
     }
 }
 

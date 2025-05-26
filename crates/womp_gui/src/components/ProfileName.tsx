@@ -21,12 +21,18 @@ const useStyles = makeStyles({
 export const ProfileName = ({
   profile,
   className,
-}: { profile: Profile; className?: string }) => {
+  showIcon = false,
+}: { profile: Profile | null; className?: string, showIcon?: boolean }) => {
   const styles = useStyles();
+
+  if (!profile) {
+    return null;
+  }
 
   if (profile.config) {
     return (
       <Text className={mergeClasses(styles.title, className)}>
+        {showIcon && profile.config.icon}{" "}
         {profile.config.name}{" "}
         <span className={styles.profileName}>({profile.name})</span>
       </Text>

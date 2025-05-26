@@ -1,13 +1,17 @@
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+
 use crate::serde_types::{
-    Display, DisplayLayout, GlobalInfo, global_config::GlobalConfig, optional_info::OptionalInfo, WallpaperInfo,
+    Display, DisplayLayout, GlobalInfo, WallpaperInfo, global_config::GlobalConfig,
+    optional_info::OptionalInfo,
 };
 use itertools::Itertools;
 use std::mem::size_of;
 use windows::Win32::{
-    Devices::Display::*, Foundation::*, System::Com::*, System::Variant::VARIANT, UI::Shell::*,
-    UI::WindowsAndMessaging::*,
+    Devices::Display::*, Foundation::*, Media::Audio::*, System::Com::*, System::Variant::VARIANT,
+    UI::Shell::*, UI::WindowsAndMessaging::*,
 };
-use windows::core::{HSTRING, Interface, PCWSTR};
+use windows::core::{GUID, HRESULT, HSTRING, Interface, PCWSTR};
 
 // DPI values observed from system settings
 const DPI_VALS: [u32; 12] = [100, 125, 150, 175, 200, 225, 250, 300, 350, 400, 450, 500];
@@ -90,6 +94,62 @@ pub struct CCDWrapper {
     paths: Vec<DISPLAYCONFIG_PATH_INFO>,
     modes: Vec<DISPLAYCONFIG_MODE_INFO>,
     _debug: bool,
+}
+
+// Define the UUIDs for the undocumented COM interfaces
+pub const CLSID_POLICY_CONFIG_CLIENT: GUID =
+    GUID::from_u128(0x870af99c_171d_4f9e_af0d_e63df40c2bc9);
+pub const IID_IPOLICY_CONFIG: GUID = GUID::from_u128(0xf8679f50_850a_41cf_9c72_430f290290c8);
+
+// Define the PolicyConfig interface
+#[windows::core::interface("f8679f50-850a-41cf-9c72-430f290290c8")]
+unsafe trait IPolicyConfig: windows::core::IUnknown {
+    unsafe fn GetMixFormat(
+        &self,
+        pwstrdeviceid: PCWSTR,
+        ppformat: *mut *mut WAVEFORMATEX,
+    ) -> HRESULT;
+    unsafe fn GetDeviceFormat(
+        &self,
+        pwstrdeviceid: PCWSTR,
+        flow: i32,
+        ppformat: *mut *mut WAVEFORMATEX,
+    ) -> HRESULT;
+    unsafe fn ResetDeviceFormat(&self, pwstrdeviceid: PCWSTR) -> HRESULT;
+    unsafe fn SetDeviceFormat(
+        &self,
+        pwstrdeviceid: PCWSTR,
+        pdesiredformat: *const WAVEFORMATEX,
+        pclientformat: *const WAVEFORMATEX,
+    ) -> HRESULT;
+    unsafe fn GetProcessingPeriod(
+        &self,
+        pwstrdeviceid: PCWSTR,
+        flow: i32,
+        pdefaultperiod: *mut i64,
+        pminimumperiod: *mut i64,
+    ) -> HRESULT;
+    unsafe fn SetProcessingPeriod(
+        &self,
+        pwstrdeviceid: PCWSTR,
+        pdefaultperiod: *const i64,
+    ) -> HRESULT;
+    unsafe fn GetShareMode(&self, pwstrdeviceid: PCWSTR, psharemode: *mut i32) -> HRESULT;
+    unsafe fn SetShareMode(&self, pwstrdeviceid: PCWSTR, psharemode: *const i32) -> HRESULT;
+    unsafe fn GetPropertyValue(
+        &self,
+        pwstrdeviceid: PCWSTR,
+        key: *const (),
+        pv: *mut (),
+    ) -> HRESULT;
+    unsafe fn SetPropertyValue(
+        &self,
+        pwstrdeviceid: PCWSTR,
+        key: *const (),
+        pv: *const (),
+    ) -> HRESULT;
+    unsafe fn SetDefaultEndpoint(&self, pwstrdeviceid: PCWSTR, role: i32) -> HRESULT;
+    unsafe fn SetEndpointVisibility(&self, pwstrdeviceid: PCWSTR, visible: i32) -> HRESULT;
 }
 
 impl CCDWrapper {
@@ -330,7 +390,16 @@ impl CCDWrapper {
             None
         };
 
-        let global_info = GlobalInfo::from(icon_size, wallpaper_info);
+        let audio_output = if global_config.save_audio_output {
+            match self.get_default_audio_output() {
+                Ok(audio_output) => Some(audio_output),
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
+        let global_info = GlobalInfo::from(icon_size, wallpaper_info, audio_output);
         let display_layout = DisplayLayout::from(displays, global_info);
 
         Result::Ok(display_layout)
@@ -484,6 +553,10 @@ impl CCDWrapper {
 
         if global_config.save_wallpaper_info {
             self.set_wallpaper_info(&display_layout.globalInfo.wallpaperInfo.as_ref().unwrap())?;
+        }
+
+        if global_config.save_audio_output {
+            self.set_default_audio_output(&display_layout.globalInfo.audioOutput.as_ref().unwrap())?;
         }
 
         Ok(())
@@ -1063,6 +1136,92 @@ impl CCDWrapper {
             }
 
             // Free COM resources
+            CoFreeUnusedLibraries();
+
+            Ok(())
+        }
+    }
+
+    pub fn get_default_audio_output(&self) -> Result<String, String> {
+        unsafe {
+            // Initialize COM if not already initialized
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            if hr.is_err() && hr != CO_E_ALREADYINITIALIZED {
+                return Err(format!("Failed to initialize COM: {:?}", hr));
+            }
+
+            // Create device enumerator
+            let device_enumerator: IMMDeviceEnumerator =
+                match CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL) {
+                    Ok(enumerator) => enumerator,
+                    Err(e) => {
+                        return Err(format!("Failed to create IMMDeviceEnumerator: {:?}", e));
+                    }
+                };
+
+            // Get default audio endpoint
+            let device = match device_enumerator.GetDefaultAudioEndpoint(eRender, eConsole) {
+                Ok(device) => device,
+                Err(e) => {
+                    return Err(format!("Failed to get default audio endpoint: {:?}", e));
+                }
+            };
+
+            // Get device ID
+            let id_str = match device.GetId() {
+                Ok(id) => {
+                    let wide_str = id.as_wide();
+                    String::from_utf16_lossy(wide_str)
+                }
+                Err(e) => {
+                    return Err(format!("Failed to get device ID: {:?}", e));
+                }
+            };
+
+            // We'd like to get the device name too, but since the property store methods aren't
+            // directly available, we'll just return the ID for now
+            // In a full implementation, you would get the friendly name from the property store
+
+            // Clean up COM resources
+            CoFreeUnusedLibraries();
+
+            Ok(id_str)
+        }
+    }
+
+    pub fn set_default_audio_output(&self, device_id: &str) -> Result<(), String> {
+        unsafe {
+            // Initialize COM if not already initialized
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            if hr.is_err() && hr != CO_E_ALREADYINITIALIZED {
+                return Err(format!("Failed to initialize COM: {:?}", hr));
+            }
+
+            // Create PolicyConfig instance
+            let policy_config: IPolicyConfig =
+                match CoCreateInstance(&CLSID_POLICY_CONFIG_CLIENT, None, CLSCTX_ALL) {
+                    Ok(config) => config,
+                    Err(e) => {
+                        return Err(format!("Failed to create IPolicyConfig: {:?}", e));
+                    }
+                };
+
+            // Convert device ID to HSTRING
+            let id_hstring = HSTRING::from(device_id);
+
+            // Set as default endpoint for all roles (eConsole = 0, eMultimedia = 1, eCommunications = 2)
+            for role in [0, 1, 2] {
+                let hr =
+                    policy_config.SetDefaultEndpoint(PCWSTR::from_raw(id_hstring.as_ptr()), role);
+                if hr.is_err() {
+                    return Err(format!(
+                        "Failed to set default endpoint for role {}: {:?}",
+                        role, hr
+                    ));
+                }
+            }
+
+            // Clean up COM resources
             CoFreeUnusedLibraries();
 
             Ok(())

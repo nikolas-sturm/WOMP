@@ -23,10 +23,18 @@ export const useProfileEditorStyles = makeStyles({
       borderRight: "none !important",
     },
   },
+  textArea: {
+    width: "100%",
+  },
   nameInput: {
     "& > input": {
       color: "var(--colorNeutralForeground1) !important",
     },
+  },
+  header: {
+    display: "flex",
+    flexDirection: "row",
+    gap: tokens.spacingHorizontalM,
   },
   title: {
     fontSize: tokens.fontSizeBase600,
@@ -83,9 +91,10 @@ export const useProfileEditorStyles = makeStyles({
     margin: "0 auto",
     overflowY: "hidden",
   },
-  fieldsContainer: {
+  section: {
     display: "flex",
     flexDirection: "column",
+    gap: tokens.spacingVerticalS,
     overflowY: "auto",
     overflowX: "hidden",
   },

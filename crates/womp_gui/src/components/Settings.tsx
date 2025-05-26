@@ -2,7 +2,7 @@ import { useGlobalConfigStore } from "@/lib/globalConfig";
 import { Button, Label, Link, makeStyles, Switch, SwitchOnChangeData, Text, Title2, tokens } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
 import { Icon } from "./DynamicIcon";
-import { SettingsCard, SettingsCardItem } from "./SettingsCard";
+import { Card, CardItem } from "./Card";
 import { ThemeSelect } from "./ThemeSelect";
 
 const useStyles = makeStyles({
@@ -136,6 +136,9 @@ export function Settings() {
       case "save_wallpaper_info":
         setGlobalConfig({ ...globalConfig, save_wallpaper_info: data.checked });
         break;
+      case "save_audio_output":
+        setGlobalConfig({ ...globalConfig, save_audio_output: data.checked });
+        break;
     }
   };
 
@@ -144,13 +147,13 @@ export function Settings() {
       <Title2>Settings</Title2>
       <div className={classes.section}>
         <Label>Appearance & behavior</Label>
-        <SettingsCard
+        <Card
           header="App theme"
           icon={"\uE790"}
           control={<ThemeSelect />}
           description="Select which app theme to display"
         />
-        <SettingsCard
+        <Card
           header="Run at startup"
           control={
             <Switch
@@ -167,7 +170,7 @@ export function Settings() {
       </div>
       <div className={classes.section}>
         <Label>Experimental settings</Label>
-        <SettingsCard
+        <Card
           header="Save DPI/Display Scale"
           icon={"\uE58E"}
           control={
@@ -182,7 +185,7 @@ export function Settings() {
           }
           description="Store the display zoom percentage for each profile"
         />
-        <SettingsCard
+        <Card
           header="Save Desktop Icon Size"
           icon={"\uE8A9"}
           control={
@@ -197,7 +200,7 @@ export function Settings() {
           }
           description="Store the desktop icon size for each profile"
         />
-        <SettingsCard
+        <Card
           header="Save Wallpaper Info"
           icon={"\uE91B"}
           control={
@@ -212,7 +215,7 @@ export function Settings() {
           }
           description="Store the wallpaper image and fit for each profile"
         />
-        <SettingsCard
+        <Card
           header="Save HDR State"
           icon={"\uEA7F"}
           expandable
@@ -228,7 +231,7 @@ export function Settings() {
           }
           description="Store the display HDR state for each profile"
         >
-          <SettingsCardItem
+          <CardItem
             header="Save SDR White Level"
             disabled={!globalConfig.save_hdr_state}
             control={
@@ -243,11 +246,26 @@ export function Settings() {
             }
             description="Store the display SDR white level for each profile"
           />
-        </SettingsCard>
+        </Card>
+        <Card
+          header="Save Audio Output"
+          icon={"\uE767"}
+          control={
+            <Switch
+              id="save_audio_output"
+              className={classes.switch}
+              checked={globalConfig.save_audio_output}
+              onChange={handleOptionToggle}
+              label={globalConfig.save_audio_output ? "On" : "Off"}
+              labelPosition="before"
+            />
+          }
+          description="Store the default audio output for each profile"
+        />
       </div>
       <div className={classes.section}>
         <Label>About</Label>
-        <SettingsCard
+        <Card
           header="WOMP Config UI"
           icon={"\uEBC6"}
           control="1.0.0"
@@ -293,7 +311,7 @@ export function Settings() {
           <div>
             <Text>THIS CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.</Text>
           </div>
-        </SettingsCard>
+        </Card>
       </div >
     </div >
   );
