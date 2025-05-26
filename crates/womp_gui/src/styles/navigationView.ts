@@ -109,6 +109,8 @@ export const useNavigationViewStyles = makeStyles({
     height: "34px",
     maxWidth: "40px",
     minWidth: "40px",
+  },
+  headerButtonAnimated: {
     "&:hover": {
       backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.1)",
     },

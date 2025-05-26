@@ -1,3 +1,5 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
 name = "womp_gui"
 version.workspace = true
@@ -38,3 +40,15 @@ notify = "8.0.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"
+
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+rustflags = ["-Zthreads=32"] # Better compile performance.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = "s" # Prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed.
+rustflags = ["-Cdebuginfo=0", "-Zthreads=32"] # Better compile performance.

@@ -199,7 +199,7 @@ export const NavigationView = () => {
         <div className={styles.header}>
           <Button
             appearance="subtle"
-            className={styles.headerButton}
+            className={mergeClasses(styles.headerButton, styles.headerButtonAnimated)}
             onClick={toggleExpanded}
             aria-expanded={isExpanded}
             aria-controls={titleId}

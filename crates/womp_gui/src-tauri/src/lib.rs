@@ -1,10 +1,10 @@
 use notify::{RecursiveMode, Result as NotifyResult, Watcher, recommended_watcher};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::Once;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Emitter;
-use tauri::{AppHandle, Manager, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use window_vibrancy::*;
 use windows::Foundation::TypedEventHandler;
@@ -45,9 +45,7 @@ pub fn run() {
             let main_window = WebviewWindowBuilder::new(
                 app,
                 "main",
-                tauri::WebviewUrl::External(
-                    tauri::Url::parse("http://localhost:1420/?view=main").unwrap(),
-                ),
+                WebviewUrl::App(PathBuf::from("?view=main")),
             )
             .title("WOMP Config UI")
             .inner_size(1000.0, 700.0)
@@ -62,9 +60,7 @@ pub fn run() {
             let dialog_window = WebviewWindowBuilder::new(
                 app,
                 "dialog",
-                tauri::WebviewUrl::External(
-                    tauri::Url::parse("http://localhost:1420/?view=dialog").unwrap(),
-                ),
+                WebviewUrl::App(PathBuf::from("?view=dialog")),
             )
             .title("Dialog")
             .inner_size(320.0, 174.0)

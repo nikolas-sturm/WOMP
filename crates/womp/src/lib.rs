@@ -175,3 +175,8 @@ pub fn turn_off_all_displays(debug: bool) -> Result<(), String> {
     let mut wrapper = CCDWrapper::new(true, debug);
     wrapper.turn_off_all_displays()
 }
+
+pub fn get_profiles() -> Result<Vec<(String, Option<Config>)>, String> {
+    let profiles = get_profiles_and_configs().unwrap();
+    Ok(profiles)
+}

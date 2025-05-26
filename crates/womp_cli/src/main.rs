@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use womp::{apply_display_layout, get_global_config, save_current_display_layout};
+use womp::{apply_display_layout, get_global_config, get_profiles, save_current_display_layout};
 
 #[derive(Parser)]
 #[command(author, version, about = "Windows Output Manager Protocol CLI")]
@@ -25,6 +25,8 @@ enum Commands {
         #[arg(short, long, default_value_t = true)]
         run: bool,
     },
+    /// List all profiles
+    List,
 }
 
 fn main() {
@@ -49,5 +51,19 @@ fn main() {
                 }
             }
         }
+        Commands::List => match get_profiles() {
+            Ok(profiles) => {
+                for (name, profile) in profiles {
+                    if let Some(profile) = profile {
+                        println!("- `{}`: {}", name, profile.description);
+                    } else {
+                        println!("- \"{name}\"");
+                    }
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to list profiles: {e}");
+            }
+        },
     }
 }

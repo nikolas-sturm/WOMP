@@ -6,6 +6,7 @@ import {
 } from "@fluentui/react-components";
 import Color from "color";
 
+// @ts-ignore
 function ll(color: string, lightness: number): string {
   const lightnessPercentage = lightness * 100;
   return Color(color).lightness(lightnessPercentage).rgb().toString();
