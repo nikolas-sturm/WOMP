@@ -29,7 +29,10 @@ pub fn next_profile() -> Result<(), String> {
     let profiles = get_profiles().unwrap();
     let active_profile = get_active_profile().unwrap();
     if let Some(active_profile) = active_profile {
-        let active_profile_index = profiles.iter().position(|p| p.name == active_profile).unwrap();
+        let active_profile_index = profiles
+            .iter()
+            .position(|p| p.name == active_profile)
+            .unwrap();
         let next_profile_index = (active_profile_index + 1) % profiles.len();
         let next_profile = profiles[next_profile_index].name.clone();
         apply_display_layout(next_profile)
@@ -43,7 +46,10 @@ pub fn previous_profile() -> Result<(), String> {
     let profiles = get_profiles().unwrap();
     let active_profile = get_active_profile().unwrap();
     if let Some(active_profile) = active_profile {
-        let active_profile_index = profiles.iter().position(|p| p.name == active_profile).unwrap();
+        let active_profile_index = profiles
+            .iter()
+            .position(|p| p.name == active_profile)
+            .unwrap();
         let previous_profile_index = (active_profile_index + profiles.len() - 1) % profiles.len();
         let previous_profile = profiles[previous_profile_index].name.clone();
         apply_display_layout(previous_profile)
@@ -65,7 +71,7 @@ pub fn set_global_config(global_config: GlobalConfig) -> Result<(), String> {
 #[command]
 pub fn apply_display_layout(profile_name: String) -> Result<(), String> {
     let global_config = get_global_config().unwrap();
-    womp::apply_display_layout(&profile_name, true, &global_config, false)
+    womp::apply_display_layout(&profile_name, true, &global_config, true)
 }
 
 #[command]

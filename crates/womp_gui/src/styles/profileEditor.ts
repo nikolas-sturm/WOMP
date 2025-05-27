@@ -31,6 +31,21 @@ export const useProfileEditorStyles = makeStyles({
       color: "var(--colorNeutralForeground1) !important",
     },
   },
+  fileInputContainer: {
+    display: "flex",
+    flexDirection: "column",
+    gap: tokens.spacingVerticalS,
+    width: "100%",
+  },
+  fileRow: {
+    display: "flex",
+    flexDirection: "row",
+    gap: tokens.spacingHorizontalS,
+    width: "100%",
+  },
+  targetInput: {
+    flexGrow: 1,
+  },
   header: {
     display: "flex",
     flexDirection: "row",
@@ -126,6 +141,23 @@ export const useProfileEditorStyles = makeStyles({
       backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.05)",
     },
   },
+  browseButton: {
+    flexShrink: 0,
+    fontWeight: tokens.fontWeightRegular,
+    color: tokens.colorNeutralForeground1,
+    backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.1)",
+    "&:hover": {
+      backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.15)",
+    },
+    "&:hover:active": {
+      color: tokens.colorNeutralForeground2,
+      backgroundColor: "rgb(from var(--colorNeutralForeground1) r g b / 0.05)",
+    },
+    "& > span": {
+      paddingTop: "3px",
+      paddingLeft: "2px",
+    },
+  },
   saveButton: {
     flex: "1 1 0",
     fontWeight: tokens.fontWeightRegular,
@@ -140,5 +172,20 @@ export const useProfileEditorStyles = makeStyles({
   },
   deleteDialogSurface: {
     width: "fit-content",
+  },
+  clearButton: {
+    padding: 0,
+    border: "none",
+    width: "20px",
+    height: "30px",
+    alignContent: "center",
+    justifyContent: "center",
+    "& > span": {
+      paddingTop: "4px",
+      paddingLeft: "2px",
+      width: "12px",
+      height: "12px",
+      fontSize: "12px",
+    },
   },
 });

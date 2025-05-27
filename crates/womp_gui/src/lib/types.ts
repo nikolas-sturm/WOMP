@@ -11,6 +11,11 @@ export interface Config {
 }
 
 export interface Run {
-  before: string | undefined;
-  after: string | undefined;
+  before: RunCommand | undefined;
+  after: RunCommand | undefined;
+}
+
+export interface RunCommand {
+  target: string | undefined;
+  args: string | undefined;
 }

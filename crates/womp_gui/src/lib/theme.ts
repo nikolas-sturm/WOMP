@@ -52,5 +52,8 @@ export function buildTheme(
     colorCompoundBrandStroke: systemColors.accent_light_2,
     colorCompoundBrandStrokeHover: l(systemColors.accent_light_2, 0.1),
     colorCompoundBrandStrokePressed: d(systemColors.accent_light_2, 0.3),
+    colorNeutralForeground2BrandHover: systemColors.accent_light_2,
+    colorNeutralForeground2BrandPressed: d(systemColors.accent_light_2, 0.3),
+    colorNeutralForeground2BrandSelected: d(systemColors.accent_light_2, 0.2),
   };
 }

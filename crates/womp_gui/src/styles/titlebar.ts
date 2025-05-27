@@ -59,7 +59,8 @@ export const useTitlebarStyles = makeStyles({
     },
   },
   titleIcon: {
-    fontSize: "16px",
+    width: "24px",
+    height: "24px",
     verticalAlign: "middle",
   },
 });

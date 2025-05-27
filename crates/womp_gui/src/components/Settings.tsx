@@ -1,8 +1,8 @@
 import { useGlobalConfigStore } from "@/lib/globalConfig";
 import { Button, Label, Link, makeStyles, Switch, SwitchOnChangeData, Text, Title2, tokens } from "@fluentui/react-components";
 import { useEffect, useState } from "react";
-import { Icon } from "./DynamicIcon";
 import { Card, CardItem } from "./Card";
+import { Icon } from "./DynamicIcon";
 import { ThemeSelect } from "./ThemeSelect";
 
 const useStyles = makeStyles({
@@ -267,7 +267,7 @@ export function Settings() {
         <Label>About</Label>
         <Card
           header="WOMP Config UI"
-          icon={"\uEBC6"}
+          iconImage={"/32x32.png"}
           control="1.0.0"
           description="© 2025 Nikolas Sturm. All rights reserved."
           expandable

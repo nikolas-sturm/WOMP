@@ -14,6 +14,8 @@ import { Icon } from './DynamicIcon';
 interface CardProps {
   /** Optional icon to display on the left of the header. Recommended size: 24x24 or 32x32. */
   icon?: string;
+  /** Optional url to image to display on the left of the header. Recommended size: 24x24 or 32x32. */
+  iconImage?: string;
   /** The main title text for the card. */
   header: string;
   /** Optional description text displayed below the header. */
@@ -109,6 +111,8 @@ const useStyles = makeStyles({
   icon: {
     marginRight: tokens.spacingHorizontalL,
     fontSize: tokens.fontSizeBase500,
+    width: "24px",
+    height: "24px",
   },
   chevronIcon: {
     transition: 'transform 0.2s ease',
@@ -121,6 +125,7 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     width: '100%',
+    gap: tokens.spacingHorizontalL,
     padding: 0,
   },
   itemContent: {
@@ -160,7 +165,7 @@ export const CardItem: React.FC<CardItemProps> = ({
       <div className={styles.itemContent}>
         {header && <Text size={300}>{header}</Text>}
         {description && (
-          <Text size={200} style={{ color: tokens.colorNeutralForeground2 }}>
+          <Text size={200} style={{ color: tokens.colorNeutralForeground2, whiteSpace: "nowrap" }}>
             {description}
           </Text>
         )}
@@ -176,6 +181,7 @@ export const CardItem: React.FC<CardItemProps> = ({
 
 export const Card: React.FC<CardProps> = ({
   icon,
+  iconImage,
   header,
   description,
   control,
@@ -204,6 +210,7 @@ export const Card: React.FC<CardProps> = ({
   const renderedCardHeaderContent = (
     <div className={styles.headerRow}>
       {icon && <Icon icon={icon} className={styles.icon} />}
+      {iconImage && <img src={iconImage} alt="Icon" className={styles.icon} />}
       <div className={styles.headerTextContent}>
         <Text size={300}>{header}</Text>
         {description && (

@@ -107,7 +107,8 @@ pub fn apply_display_layout(
         if run_commands && !config.run.is_empty() {
             let output = Command::new("cmd")
                 .raw_arg("/C")
-                .raw_arg(&config.run.before)
+                .raw_arg(&config.run.before.target)
+                .raw_arg(&config.run.before.args)
                 .output()
                 .expect("Failed to run `before` command.");
 
@@ -156,7 +157,8 @@ pub fn apply_display_layout(
     if run_commands && config_exists && !config.run.is_empty() {
         let output = Command::new("cmd")
             .raw_arg("/C")
-            .raw_arg(&config.run.after)
+            .raw_arg(&config.run.after.target)
+            .raw_arg(&config.run.after.args)
             .output()
             .expect("Failed to run `after` command.");
 

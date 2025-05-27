@@ -10,7 +10,7 @@
         "process:default",
         "autostart:default",
         "notification:default",
-
+        "dialog:default",
         "core:window:allow-create",
         "core:webview:allow-create-webview",
         "core:webview:allow-webview-show",
@@ -24,6 +24,7 @@
         "core:window:allow-show",
         "core:window:allow-set-focus",
         "core:window:allow-is-minimized",
-        "core:window:allow-unminimize"
+        "core:window:allow-unminimize",
+        "dialog:allow-open"
     ]
 }

@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { enable, isEnabled, disable } from "@tauri-apps/plugin-autostart";
 import { create } from "zustand";
 
 export type ThemeOption = "system" | "dark" | "light";
@@ -34,10 +35,28 @@ export const useGlobalConfigStore = create<GlobalConfigStore>((set) => ({
   getGlobalConfig: async () => {
     const globalConfig = await invoke<GlobalConfig>("get_global_config");
     set({ globalConfig });
+    if (globalConfig.autostart) {
+      if (!(await isEnabled())) {
+        enable();
+      }
+    } else {
+      if (await isEnabled()) {
+        disable();
+      }
+    }
     return globalConfig;
   },
-  setGlobalConfig: (globalConfig: GlobalConfig) => {
+  setGlobalConfig: async (globalConfig: GlobalConfig) => {
     invoke("set_global_config", { globalConfig });
     set({ globalConfig });
+    if (globalConfig.autostart) {
+      if (!(await isEnabled())) {
+        enable();
+      }
+    } else {
+      if (await isEnabled()) {
+        disable();
+      }
+    }
   },
 }));

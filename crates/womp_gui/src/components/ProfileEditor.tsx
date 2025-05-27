@@ -1,6 +1,6 @@
 import { ProfileName } from "@/components/ProfileName";
 import { useProfileStore } from "@/lib/profileStore";
-import type { Config, Profile, Run } from "@/lib/types";
+import type { Config, Profile, Run, RunCommand } from "@/lib/types";
 import { useProfileEditorStyles } from "@/styles/profileEditor";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
@@ -22,6 +22,7 @@ import {
   mergeClasses
 } from "@fluentui/react-components";
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { Card, CardItem } from "./Card";
@@ -165,6 +166,53 @@ export function ProfileEditor() {
     setPopoverOpen(false);
   };
 
+  const handleFileSelect = async (type: 'before' | 'after') => {
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      filters: [
+        { name: 'Executables', extensions: ['exe', 'bat', 'cmd', 'sh'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+
+    if (selected && typeof selected === 'string' && tempProfile?.config) {
+      const runCommand: RunCommand = {
+        target: selected,
+        args: tempProfile.config.run?.[type]?.args || ''
+      };
+
+      setTempProfile({
+        ...tempProfile,
+        config: {
+          ...tempProfile.config,
+          run: {
+            ...tempProfile.config.run,
+            [type]: runCommand
+          } as Run
+        } as Config
+      });
+    }
+  };
+
+  const handleClearRunCommand = (type: 'before' | 'after', field: 'target' | 'args') => {
+    if (tempProfile?.config) {
+      setTempProfile({
+        ...tempProfile,
+        config: {
+          ...tempProfile.config,
+          run: {
+            ...tempProfile.config.run,
+            [type]: {
+              ...tempProfile.config.run?.[type],
+              [field]: ''
+            } as RunCommand
+          } as Run
+        } as Config
+      });
+    }
+  };
+
   if (selectedProfile === "settings") {
     return null;
   }
@@ -276,52 +324,161 @@ export function ProfileEditor() {
             </Card>
 
             <Card
-              header="Run"
+              header="Run Before"
               icon={"\uE756"}
               expandable
             >
               <CardItem
-                header="Before"
-                description="Enter a command to run before the profile is applied"
+                header="Target"
+                description="Executable to run before apply"
                 control={
-                  <Input
-                    className={styles.input}
-                    value={tempProfile?.config?.run?.before ?? ""}
+                  <div className={styles.fileRow}>
+                    <Input
+                      className={mergeClasses(styles.input, styles.targetInput)}
+                      value={tempProfile?.config?.run?.before?.target || ""}
+                      placeholder="Target executable path"
+                      contentAfter={
+                        <Button
+                          icon={"\uE894"}
+                          className={styles.clearButton}
+                          appearance="transparent"
+                          onClick={() => handleClearRunCommand('before', 'target')}
+                        />
+                      }
+                      onChange={(e) => {
+                        if (tempProfile?.config) {
+                          const runCommand: RunCommand = {
+                            target: e.target.value,
+                            args: tempProfile.config.run?.before?.args || ''
+                          };
+
+                          setTempProfile({
+                            ...tempProfile,
+                            config: {
+                              ...tempProfile.config,
+                              run: {
+                                ...tempProfile.config.run,
+                                before: runCommand
+                              } as Run
+                            } as Config
+                          });
+                        }
+                      }}
+                    />
+                    <Button
+                      appearance="secondary"
+                      className={styles.browseButton}
+                      onClick={() => handleFileSelect('before')}
+                      icon={"\uE838"}
+                    />
+                  </div>
+                }
+              />
+              <CardItem
+                fullWidthControl
+                control={
+                  <Textarea
+                    className={mergeClasses(styles.input, styles.textArea)}
+                    value={tempProfile?.config?.run?.before?.args || ""}
+                    placeholder="Command arguments"
                     onChange={(e) => {
                       if (tempProfile?.config) {
+                        const runCommand: RunCommand = {
+                          target: tempProfile.config.run?.before?.target || '',
+                          args: e.target.value
+                        };
+
                         setTempProfile({
                           ...tempProfile,
                           config: {
                             ...tempProfile.config,
                             run: {
                               ...tempProfile.config.run,
-                              before: e.target.value,
-                            } as Run,
-                          } as Config,
+                              before: runCommand
+                            } as Run
+                          } as Config
                         });
                       }
                     }}
                   />
                 }
               />
+            </Card>
+
+            <Card
+              header="Run After"
+              icon={"\uE756"}
+              expandable
+            >
               <CardItem
-                header="After"
-                description="Enter a command to run after the profile is applied"
+                header="Target"
+                description="Executable to run after apply"
                 control={
-                  <Input
-                    className={styles.input}
-                    value={tempProfile?.config?.run?.after ?? ""}
+                  <div className={styles.fileRow}>
+                    <Input
+                      className={mergeClasses(styles.input, styles.targetInput)}
+                      value={tempProfile?.config?.run?.after?.target || ""}
+                      placeholder="Target executable path"
+                      contentAfter={
+                        <Button
+                          icon={"\uE894"}
+                          className={styles.clearButton}
+                          appearance="transparent"
+                          onClick={() => handleClearRunCommand('after', 'target')}
+                        />
+                      }
+                      onChange={(e) => {
+                        if (tempProfile?.config) {
+                          const runCommand: RunCommand = {
+                            target: e.target.value,
+                            args: tempProfile.config.run?.after?.args || ''
+                          };
+
+                          setTempProfile({
+                            ...tempProfile,
+                            config: {
+                              ...tempProfile.config,
+                              run: {
+                                ...tempProfile.config.run,
+                                after: runCommand
+                              } as Run
+                            } as Config
+                          });
+                        }
+                      }}
+                    />
+                    <Button
+                      appearance="secondary"
+                      className={styles.browseButton}
+                      onClick={() => handleFileSelect('after')}
+                      icon={"\uE838"}
+                    />
+                  </div>
+                }
+              />
+              <CardItem
+                fullWidthControl
+                control={
+                  <Textarea
+                    className={mergeClasses(styles.input, styles.textArea)}
+                    value={tempProfile?.config?.run?.after?.args || ""}
+                    placeholder="Command arguments"
                     onChange={(e) => {
                       if (tempProfile?.config) {
+                        const runCommand: RunCommand = {
+                          target: tempProfile.config.run?.after?.target || '',
+                          args: e.target.value
+                        };
+
                         setTempProfile({
                           ...tempProfile,
                           config: {
                             ...tempProfile.config,
                             run: {
                               ...tempProfile.config.run,
-                              after: e.target.value,
-                            } as Run,
-                          } as Config,
+                              after: runCommand
+                            } as Run
+                          } as Config
                         });
                       }
                     }}

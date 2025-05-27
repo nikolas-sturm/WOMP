@@ -84,7 +84,7 @@ export function Titlebar({ onlyClose = false }: { onlyClose?: boolean }) {
   return (
     <div className={styles.titlebar} data-tauri-drag-region>
       <div className={styles.title} data-tauri-drag-region>
-        <span className={styles.titleIcon}>&#xEBC6;</span>
+        <img src="/32x32.png" alt="Icon" className={styles.titleIcon} />
         &nbsp;&nbsp;&nbsp;&nbsp;{windowTitle}
       </div>
       <div className={styles.windowControls}>
