@@ -1,0 +1,38 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "WOMP",
+    "version": "0.1.0",
+    "identifier": "com.nikolas-sturm.womp",
+    "build": {
+        "beforeDevCommand": "npm run dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "npm run build",
+        "frontendDist": "../dist"
+    },
+    "app": {
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "nsis",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.ico"
+        ],
+        "resources": [
+            "add_to_path.ps1"
+        ],
+        "windows": {
+            "nsis": {
+                "installerIcon": "icons/icon.ico",
+                "installerHooks": "nsis_hooks.nsh"
+            }
+        },
+        "copyright": "© 2025 Nikolas Sturm",
+        "publisher": "Nikolas Sturm"
+    }
+}

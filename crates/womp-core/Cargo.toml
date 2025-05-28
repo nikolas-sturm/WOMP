@@ -1,0 +1,19 @@
+[package]
+name = "womp-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core library for WOMP"
+readme.workspace = true
+
+[dependencies]
+dirs = "6.0.0"
+itertools = "0.14.0"
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+widestring = "1.2.0"
+windows-core = "0.61.2"
+windows = { workspace = true }

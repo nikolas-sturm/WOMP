@@ -33,14 +33,14 @@
         },
         "[typescript]": {
             "editor.tabSize": 2,
-            "editor.defaultFormatter": "vscode.typescript-language-features",
+            "editor.defaultFormatter": "biomejs.biome",
             "editor.codeActionsOnSave": {
                 "quickfix.biome": "explicit",
             },
         },
         "[typescriptreact]": {
             "editor.tabSize": 2,
-            "editor.defaultFormatter": "vscode.typescript-language-features",
+            "editor.defaultFormatter": "biomejs.biome",
             "editor.codeActionsOnSave": {
                 "quickfix.biome": "explicit",
             },
@@ -52,7 +52,7 @@
             },
         },
         "[json]": {
-            "editor.defaultFormatter": "vscode.json-language-features"
+            "editor.defaultFormatter": "biomejs.biome"
         },
     },
     "extensions": {

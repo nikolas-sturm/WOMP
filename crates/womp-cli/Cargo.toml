@@ -1,0 +1,13 @@
+[package]
+name = "womp-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "CLI Client for WOMP, the WindowsOutputManagerProtocol."
+readme.workspace = true
+
+[dependencies]
+clap = { version = "4.5.4", features = ["derive"] }
+womp-core = { workspace = true }

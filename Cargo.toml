@@ -1,9 +1,11 @@
+cargo-features = ["profile-rustflags"]
+
 [workspace]
 resolver = "3"
 members = [
-    "crates/womp",
-    "crates/womp_cli",
-    "crates/womp_gui/src-tauri"
+    "crates/womp-core",
+    "crates/womp/src-tauri",
+    "crates/womp-cli"
 ]
 
 [workspace.package]
@@ -16,4 +18,32 @@ readme = "README.md"
 repository = "https://github.com/nikolas-sturm/womp"
 
 [workspace.dependencies]
-womp = { path = "crates/womp" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+windows = { version = "0.61.1", features = [
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_System_Ole",
+    "Win32_System_Variant",
+    "Win32_UI_Shell",
+    "Win32_Foundation",
+    "Win32_Devices_Display",
+    "Win32_UI_WindowsAndMessaging",
+    "UI_ViewManagement",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Console"
+]}
+womp-core = { path = "crates/womp-core" }
+
+[profile.dev]
+incremental = true # Compile your binary in smaller steps.
+rustflags = ["-Zthreads=32"] # Better compile performance.
+
+[profile.release]
+codegen-units = 1 # Allows LLVM to perform better optimization.
+lto = true # Enables link-time-optimizations.
+opt-level = "s" # Prioritizes small binary size. Use `3` if you prefer speed.
+panic = "abort" # Higher performance by disabling panic handlers.
+strip = true # Ensures debug symbols are removed.
+rustflags = ["-Cdebuginfo=0", "-Zthreads=32"] # Better compile performance.
