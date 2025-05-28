@@ -159,7 +159,6 @@ export function Settings() {
         />
         <Card
           header="Tray icon"
-          icon={"\uE790"}
           control={<TrayIconSelect />}
           description="Select which tray icon to display"
         />

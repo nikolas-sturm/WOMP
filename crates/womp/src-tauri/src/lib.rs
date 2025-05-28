@@ -1,8 +1,10 @@
-use notify::{RecursiveMode, Result as NotifyResult, Watcher, recommended_watcher};
+use notify::RecursiveMode;
+use notify_debouncer_full::{DebounceEventResult, new_debouncer};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::Once;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 use tauri::Emitter;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
@@ -42,6 +44,33 @@ pub fn run() {
             None,
         ))
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            println!(
+                "Attempted to launch second instance with args: {:?} in {:?}",
+                argv, cwd
+            );
+
+            // Focus the main window when a second instance is launched
+            if let Some(main_window) = app.get_webview_window("main") {
+                if let Err(e) = main_window.set_focus() {
+                    eprintln!("Failed to focus main window: {}", e);
+                }
+
+                if let Err(e) = main_window.unminimize() {
+                    eprintln!("Failed to unminimize main window: {}", e);
+                }
+
+                if let Err(e) = main_window.show() {
+                    eprintln!("Failed to show main window: {}", e);
+                }
+
+                // Optionally notify the user
+                app.emit_to("main", "second-instance", argv)
+                    .unwrap_or_else(|e| {
+                        eprintln!("Failed to emit second-instance event: {}", e);
+                    });
+            }
+        }))
         .setup(|app| {
             let main_window = WebviewWindowBuilder::new(
                 app,
@@ -76,6 +105,8 @@ pub fn run() {
 
             apply_mica(&main_window, None).expect("Failed to apply mica");
             apply_mica(&dialog_window, None).expect("Failed to apply mica");
+
+            main_window.show().unwrap();
 
             // Set up color change listener
             setup_color_change_listener(app.app_handle().clone());
@@ -121,37 +152,42 @@ fn setup_profiles_dir_watcher(app_handle: AppHandle) {
         if let Ok(config_dir) = app_handle.path().config_dir() {
             let profiles_dir = config_dir.join("WOMP").join("profiles");
 
-            // Create the event handler
-            let event_handler = move |res: NotifyResult<notify::Event>| {
+            // Create the debounced event handler
+            let event_handler = move |res: DebounceEventResult| {
                 match res {
-                    Ok(_) => {
-                        // When any file system event occurs, emit a "profiles_updated" event
-                        app_handle
-                            .emit_to("main", "event", "profiles_updated")
-                            .unwrap_or_else(|e| {
-                                eprintln!("Failed to emit profiles_updated event: {}", e);
-                            });
+                    Ok(events) => {
+                        if !events.is_empty() {
+                            // When any file system event occurs, emit a "profiles_updated" event
+                            app_handle
+                                .emit_to("main", "event", "profiles_updated")
+                                .unwrap_or_else(|e| {
+                                    eprintln!("Failed to emit profiles_updated event: {}", e);
+                                });
+                        }
                     }
                     Err(e) => eprintln!("Watch error: {:?}", e),
                 }
             };
 
-            // Create a new watcher with the event handler
-            match recommended_watcher(event_handler) {
-                Ok(mut watcher) => {
+            // Create a new debounced watcher with the event handler
+            match new_debouncer(Duration::from_millis(100), None, event_handler) {
+                Ok(mut debouncer) => {
                     // Watch the profiles directory recursively
                     if let Err(e) =
-                        watcher.watch(Path::new(&profiles_dir), RecursiveMode::Recursive)
+                        debouncer.watch(Path::new(&profiles_dir), RecursiveMode::Recursive)
                     {
                         eprintln!("Failed to watch profiles directory: {}", e);
                     } else {
-                        println!("Watching profiles directory: {:?}", profiles_dir);
+                        println!(
+                            "Watching profiles directory with 100ms debounce: {:?}",
+                            profiles_dir
+                        );
 
                         // Keep the watcher alive
                         std::thread::park();
                     }
                 }
-                Err(e) => eprintln!("Failed to create watcher: {}", e),
+                Err(e) => eprintln!("Failed to create debounced watcher: {}", e),
             }
         } else {
             eprintln!("Failed to get app config directory");

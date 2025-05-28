@@ -24,7 +24,8 @@
             "icons/icon.ico"
         ],
         "resources": [
-            "add_to_path.ps1"
+            "add_to_path.ps1",
+            "icons/32x32.png"
         ],
         "windows": {
             "nsis": {

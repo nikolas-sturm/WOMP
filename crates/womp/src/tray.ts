@@ -2,11 +2,12 @@ import { glyphToImage } from '@/lib/glyphToImage';
 import { notify } from '@/lib/notification';
 import { Profile } from '@/lib/types';
 import { invoke } from '@tauri-apps/api/core';
+import { Image } from '@tauri-apps/api/image';
 import { IconMenuItem, Menu, PredefinedMenuItem, Submenu } from '@tauri-apps/api/menu';
+import { resolveResource } from '@tauri-apps/api/path';
 import { TrayIcon } from '@tauri-apps/api/tray';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { exit } from '@tauri-apps/plugin-process';
-import { Image } from '@tauri-apps/api/image';
 
 type ProfileAction = "apply" | "save" | "delete";
 
@@ -216,8 +217,10 @@ export async function createTray(profiles: Profile[], activeProfile: string | nu
         const tray = await TrayIcon.getById("womp-tray");
         if (tray) return;
 
+        const iconPath = await resolveResource("icons/32x32.png");
+
         const icon =
-            trayIcon === "womp" ? await Image.fromPath("/32x32.png")
+            trayIcon === "womp" ? await Image.fromPath(iconPath)
                 : trayIcon === "display" ? await glyphToImage("\uE7F4")
                     : await glyphToImage("\uEBC6");
 
@@ -244,8 +247,12 @@ export async function updateTray(profiles: Profile[], activeProfile: string | nu
             return;
         }
 
+        const iconPath = await resolveResource("icons/32x32.png");
+
+        console.log("iconPath", iconPath);
+
         const icon =
-            trayIcon === "womp" ? await Image.fromPath("../public/32x32.png")
+            trayIcon === "womp" ? await Image.fromPath(iconPath)
                 : trayIcon === "display" ? await glyphToImage("\uE7F4")
                     : await glyphToImage("\uEBC6");
 
