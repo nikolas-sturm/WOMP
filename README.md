@@ -1,19 +1,26 @@
 # WOMP (Windows Output Manager Protocol)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/banner_white.png">
+  <source media="(prefers-color-scheme: light)" srcset="assets/banner_dark.png">
+  <img alt="Fallback image description" src="assets/banner_dark.png">
+</picture>
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 WOMP is a modern Windows display profile manager written in Rust, allowing you to save and switch between different display configurations with ease. It's a spiritual successor to [Monitor Profile Switcher](https://sourceforge.net/projects/monitorswitcher/) by Martin Krämer, reimagined with modern technologies.
 
-![WOMP Screenshot](https://via.placeholder.com/800x450.png?text=WOMP+Screenshot)
+## Highlights
 
-## Features
-
-- **Save & Load Display Profiles**: Save your current display configuration and switch between profiles easily
-- **Complete Display Management**: Control enabled/disabled state, resolution, refresh rate, and virtual positioning of each display
-- **Beautiful Modern UI**: Built with Tauri and React using FluentUI components - perfectly integrating with Windows 11's design language
-- **System Integration**: Runs in the system tray for easy access
-- **Custom Actions**: Run arbitrary commands before and after applying profiles
-- **Profile Customization**: Add custom icons to your profiles for easy identification
+- 💾 **Save & Load Display Profiles**: Save your current display configuration and switch between profiles easily
+- 🖥️ **Complete Display Management**: Control enabled/disabled state, resolution, refresh rate, and virtual positioning of each display
+- 🔍 **Additional Display Settings**: Save and restore DPI/scaling settings and HDR state.
+- 🏠 **Desktop Customization**: Preserve wallpaper & desktop icon size across profiles
+- 🔊 **Audio Management**: Configure default audio output devices per profile
+- ✨ **Beautiful Modern UI**: Built with Tauri and React using FluentUI components - perfectly integrating with Windows 11's design language
+- 🔄 **System Integration**: Runs in the system tray for easy access
+- 🛠️ **Custom Actions**: Run arbitrary commands before and after applying profiles
+- 🎨 **Profile Customization**: Add custom icons to your profiles for easy identification
 
 ## Use Cases
 
@@ -36,37 +43,51 @@ With WOMP, you can create profiles for each scenario and switch between them wit
 
 ## Installation
 
-Download the latest installer from the [releases page](https://github.com/nikolas-sturm/womp/releases).
+### Main Installation
 
-WOMP is Windows-only and requires Windows 10 or later.
+You have multiple options to install WOMP:
 
-## Usage
+1. **Microsoft Store**: Search for WOMP
 
-### Basic Usage
+2. **winget**:
+   ```
+   winget install --exact --id NikolasSturm.WOMP --source winget
+   ```
 
-1. **System Tray Access**: WOMP runs in your system tray for easy access
-2. **Save Current Configuration**: Right-click the tray icon → Save Current Layout → Enter Profile Name
-3. **Load Configuration**: Right-click the tray icon → Select a profile to apply
+3. **Installer**: Download the NSIS installer from the [releases page](https://github.com/nikolas-sturm/WOMP/releases)
 
-### Advanced Usage
+### CLI-Only Installation
 
-#### Custom Commands
+If you only want the command-line interface:
 
-WOMP allows you to run custom commands before and after applying a profile:
+```
+cargo install womp-cli
+```
 
-1. Open the WOMP GUI
-2. Select a profile to edit
-3. Add commands to run before/after applying the profile
+Or download the `womp-cli.exe` from the [releases page](https://github.com/nikolas-sturm/WOMP/releases)
 
-Example: Turn on a smart TV via API before enabling its display, then launch Steam Big Picture mode after the display is configured.
+### For Developers
 
-#### Profile Customization
+To use WOMP's core library in your Rust projects:
 
-Personalize your profiles with custom icons and descriptive names for easy identification.
+```
+cargo add womp-core
+```
+
+## Screenshots
+
+![Main Window](./assets/main_window.jpg)\
+\- Main Window
+
+![Tray Menu](./assets/tray_menu.jpg)\
+\- Tray Menu
+
+![CLI](./assets/cli.jpg)\
+\- CLI App
 
 ## Command Line Interface
 
-WOMP includes a CLI for power users:
+WOMP includes a CLI for automation:
 
 ```
 womp_cli save <profile_name>   # Save the current layout to a profile
@@ -103,13 +124,14 @@ womp_cli list                  # List all available profiles
    npm run tauri build
    ```
 
-The compiled binaries will be available in the `target/release` directory.
+The compiled binaries will be available in the `target/release` directory.\
+The NSIS installer bundle will be inside `target/release/bundle/nsis`
 
 ## Project Structure
 
-- **womp**: Core library containing the display management functionality
-- **womp_cli**: Command-line interface for basic interactions
-- **womp_gui**: Tauri/React application providing a modern GUI experience
+- **womp-core**: Core library containing the display management functionality
+- **womp-cli**: Command-line interface for basic interactions
+- **womp**: Tauri/React application providing a modern GUI experience
 
 ## Contributing
 

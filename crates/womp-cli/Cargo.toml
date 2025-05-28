@@ -8,6 +8,16 @@ repository.workspace = true
 description = "CLI Client for WOMP, the WindowsOutputManagerProtocol."
 readme.workspace = true
 
+# Default binary with package name
+[[bin]]
+name = "womp-cli"
+path = "src/main.rs"
+
+# Binary with Tauri-expected name format
+[[bin]]
+name = "womp-cli-x86_64-pc-windows-msvc"
+path = "src/main.rs"
+
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
 womp-core = { workspace = true }

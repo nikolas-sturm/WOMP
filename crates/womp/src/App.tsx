@@ -38,34 +38,37 @@ function App() {
   const { globalConfig } = useGlobalConfigStore();
 
   useEffect(() => {
-    initProfiles();
+    const init = async () => {
+      initProfiles();
 
-    const window = getCurrentWindow();
-    window.listen("event", async (e) => {
-      if (e.payload === "profiles_updated") {
-        await initProfiles();
-      }
-    });
-    
-    // Listen for second-instance events
-    window.listen("second-instance", (event) => {
-      console.log("Second instance detected with args:", event.payload);
+      const window = getCurrentWindow();
+      const unlisten_event = await window.listen("event", async (e) => {
+        if (e.payload === "profiles_updated") {
+          await initProfiles();
+        }
+      });
       
-      // Make sure the window is visible and focused
-      window.setFocus();
-      window.unminimize();
-      window.show();
+      // Listen for second-instance events
+      const unlisten_second_instance = await window.listen("second-instance", (event) => {
+        console.log("Second instance detected with args:", event.payload);
+        
+        // Make sure the window is visible and focused
+        window.setFocus();
+        window.unminimize();
+        window.show();
+        
+        // Optionally, we could handle any command line arguments here
+        // const args = event.payload as string[];
+        // if (args.includes("--some-flag")) { ... }
+      });
       
-      // Optionally, we could handle any command line arguments here
-      // const args = event.payload as string[];
-      // if (args.includes("--some-flag")) { ... }
-    });
-    
-    return () => {
-      // Clean up listeners when component unmounts
-      window.unlisten("event");
-      window.unlisten("second-instance");
-    };
+      return () => {
+        // Clean up listeners when component unmounts
+        unlisten_event();
+          unlisten_second_instance();
+        };
+      };
+    init();
   }, [initProfiles]);
 
   useEffect(() => {
