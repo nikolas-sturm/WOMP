@@ -1,0 +1,26 @@
+title: WOMP - Windows Output Manager Protocol
+description: Modern Windows display profile manager written in Rust
+url: "https://nikolas-sturm.github.io"
+baseurl: "/WOMP"
+author: Nikolas Sturm
+email: nikolas@nvsturm.com
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# GitHub Pages
+repository: nikolas-sturm/WOMP
+
+# Social media
+github_username: nikolas-sturm
+
+# Exclude files
+exclude:
+  - vendor/
+  - .bundle/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - README.md 
