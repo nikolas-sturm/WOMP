@@ -28,9 +28,6 @@ jobs:
           cache: "npm"
           cache-dependency-path: "crates/womp/package-lock.json"
 
-      - name: Rust cache
-        uses: swatinem/rust-cache@v2
-
       - name: Build womp-core
         run: |
           cargo build --release -p womp-core
