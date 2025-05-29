@@ -5746,7 +5746,7 @@ dependencies = [
 
 [[package]]
 name = "womp"
-version = "0.1.1"
+version = "1.0.0"
 dependencies = [
  "notify",
  "notify-debouncer-full",
@@ -5773,7 +5773,7 @@ dependencies = [
 
 [[package]]
 name = "womp-cli"
-version = "0.1.1"
+version = "1.0.0"
 dependencies = [
  "clap",
  "womp-core",
@@ -5781,7 +5781,7 @@ dependencies = [
 
 [[package]]
 name = "womp-core"
-version = "0.1.1"
+version = "1.0.0"
 dependencies = [
  "dirs 6.0.0",
  "itertools",

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="WOMP - Windows Output Manager Protocol. Modern Windows display profile manager written in Rust.">
+    <title>WOMP - Windows Output Manager Protocol</title>
+    <style>
+        :root {
+            --primary-color: #007acc;
+            --dark-bg: #1e1e1e;
+            --light-bg: #f8f9fa;
+            --text-dark: #333;
+            --text-light: #fff;
+            --accent-color: #ff6b6b;
+            --border-color: #e1e5e9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        main {
+            margin-top: 80px;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 5rem 0;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #005a9e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 122, 204, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary-color);
+        }
+
+        .section {
+            padding: 4rem 0;
+            background: white;
+        }
+
+        .section:nth-child(even) {
+            background: var(--light-bg);
+        }
+
+        .section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: var(--text-dark);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .feature {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .installation {
+            background: var(--dark-bg);
+            color: var(--text-light);
+        }
+
+        .installation h2 {
+            color: var(--text-light);
+        }
+
+        .install-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .install-option {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .install-option h3 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        footer {
+            background: var(--dark-bg);
+            color: var(--text-light);
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        .social-links {
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo">WOMP</div>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="https://github.com/nikolas-sturm/womp">GitHub</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>WOMP</h1>
+                <p>Windows Output Manager Protocol</p>
+                <p>Modern Windows display profile manager written in Rust</p>
+                <div class="cta-buttons">
+                    <a href="https://github.com/nikolas-sturm/womp/releases" class="btn btn-primary">Download Now</a>
+                    <a href="https://github.com/nikolas-sturm/womp" class="btn btn-secondary">View on GitHub</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="section">
+            <div class="container">
+                <h2>Features</h2>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">💾</div>
+                        <h3>Save & Load Display Profiles</h3>
+                        <p>Save your current display configuration and switch between profiles easily</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🖥️</div>
+                        <h3>Complete Display Management</h3>
+                        <p>Control enabled/disabled state, resolution, refresh rate, and virtual positioning of each
+                            display</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🔍</div>
+                        <h3>Additional Display Settings</h3>
+                        <p>Save and restore DPI/scaling settings and HDR state</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🏠</div>
+                        <h3>Desktop Customization</h3>
+                        <p>Preserve wallpaper & desktop icon size across profiles</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🔊</div>
+                        <h3>Audio Management</h3>
+                        <p>Configure default audio output devices per profile</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">✨</div>
+                        <h3>Beautiful Modern UI</h3>
+                        <p>Built with Tauri and React using FluentUI components - perfectly integrating with Windows
+                            11's design language</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="installation" class="installation">
+            <div class="container">
+                <h2>Installation</h2>
+                <div class="install-options">
+                    <div class="install-option">
+                        <h3>Microsoft Store</h3>
+                        <p>Search for WOMP in the Microsoft Store for the easiest installation experience.</p>
+                    </div>
+                    <div class="install-option">
+                        <h3>winget</h3>
+                        <div class="code">winget install --exact --id NikolasSturm.WOMP --source winget</div>
+                    </div>
+                    <div class="install-option">
+                        <h3>CLI Only</h3>
+                        <div class="code">cargo install womp-cli</div>
+                        <p>For command-line interface only</p>
+                    </div>
+                    <div class="install-option">
+                        <h3>Manual Download</h3>
+                        <p>Download the NSIS installer from the <a href="https://github.com/nikolas-sturm/womp/releases"
+                                style="color: #ff6b6b;">releases page</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <h2>Use Cases</h2>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">💼</div>
+                        <h3>Work/Gaming Setup</h3>
+                        <p>Switch between a multi-monitor productivity setup and a single gaming monitor</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">📊</div>
+                        <h3>Presentation Mode</h3>
+                        <p>Quickly configure displays for presentations</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">📺</div>
+                        <h3>TV/Media Setup</h3>
+                        <p>Configure displays for optimal media viewing experience</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">🎮</div>
+                        <h3>Gaming Optimization</h3>
+                        <p>TV output for gaming with 144Hz refresh rate, or movies with 24Hz refresh rate and movie mode
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 WOMP - Windows Output Manager Protocol. Licensed under MIT License.</p>
+            <div class="social-links">
+                <a href="https://github.com/nikolas-sturm/womp">GitHub</a>
+                <a href="https://github.com/nikolas-sturm/womp/releases">Releases</a>
+                <a href="https://github.com/nikolas-sturm/womp/issues">Support</a>
+                <a href="privacy.html">Privacy Policy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function () {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(255, 255, 255, 0.98)';
+            } else {
+                header.style.background = 'rgba(255, 255, 255, 0.95)';
+            }
+        });
+    </script>
+</body>
+
+</html>
