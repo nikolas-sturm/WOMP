@@ -1,10 +1,10 @@
 name: Build and Release
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
+  push:
+    branches:
+      - release
 
 jobs:
   build-and-release:
@@ -25,10 +25,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: "npm"
+          cache-dependency-path: "crates/womp/package-lock.json"
 
-      - name: Install Tauri dependencies
-        run: |
-          cargo install tauri-cli
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
 
       - name: Build womp-core
         run: |
@@ -38,20 +39,19 @@ jobs:
         run: |
           cargo build --release -p womp-cli
 
-      - name: Build Tauri app
+      - name: Install frontend dependencies
         run: |
           cd crates/womp
           npm install
-          cargo tauri build
 
       - name: Create Release
-        id: create_release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v1
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          draft: false
+          projectPath: crates/womp
+          tagName: v__VERSION__
+          releaseName: 'WOMP v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
           prerelease: false
-          files: |
-            target/release/bundle/nsis/*.exe
-            target/release/womp-cli.exe
-          generate_release_notes: true
