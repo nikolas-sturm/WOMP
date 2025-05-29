@@ -1,12 +1,12 @@
 import { useGlobalConfigStore } from "@/lib/globalConfig";
 import { Button, Label, Link, makeStyles, Switch, SwitchOnChangeData, Text, Title2, tokens } from "@fluentui/react-components";
+import { getVersion } from '@tauri-apps/api/app';
 import { useEffect, useState } from "react";
 import { Card, CardItem } from "./Card";
 import { Icon } from "./DynamicIcon";
 import { ThemeSelect } from "./ThemeSelect";
 import { TrayIconSelect } from "./TrayIconSelect";
 import { useUpdateChecker } from "./UpdaterDialog";
-import { getVersion } from '@tauri-apps/api/app';
 
 const useStyles = makeStyles({
   root: {
@@ -147,6 +147,9 @@ export function Settings() {
       case "save_audio_output":
         setGlobalConfig({ ...globalConfig, save_audio_output: data.checked });
         break;
+      case "auto_update":
+        setGlobalConfig({ ...globalConfig, auto_update: data.checked });
+        break;
     }
   };
 
@@ -200,6 +203,21 @@ export function Settings() {
             />
           }
           description="Run before/after commands defined in profile config"
+        />
+        <Card
+          header="Auto update"
+          icon={"\uE895"}
+          control={
+            <Switch
+              className={classes.switch}
+              id="auto_update"
+              checked={globalConfig.auto_update}
+              onChange={handleOptionToggle}
+              label={globalConfig.auto_update ? "On" : "Off"}
+              labelPosition="before"
+            />
+          }
+          description="Automatically check for updates on app startup"
         />
       </div>
       <div className={classes.section}>
@@ -360,7 +378,7 @@ export function Settings() {
           </div>
         </Card>
       </div >
-      <UpdaterDialog autoCheck={false} />
+      <UpdaterDialog autoCheck={true} />
     </div >
   );
 }

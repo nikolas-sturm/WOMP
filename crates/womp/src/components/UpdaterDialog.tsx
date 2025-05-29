@@ -12,7 +12,7 @@ import {
   Text,
   tokens
 } from '@fluentui/react-components';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { DownloadEvent, formatDownloadProgress, UpdateInfo, UpdaterService } from '../lib/updater';
 
 const useStyles = makeStyles({
@@ -24,7 +24,6 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacingVerticalM,
-    minHeight: '200px',
   },
   centerContent: {
     display: 'flex',
@@ -92,11 +91,15 @@ interface UpdaterDialogProps {
   isOpen: boolean;
   onClose: () => void;
   autoCheck?: boolean;
+  silent?: boolean;
+  onLater?: () => void;
+  presetUpdateInfo?: UpdateInfo | null;
+  isAutoUpdate?: boolean;
 }
 
-export function UpdaterDialog({ isOpen, onClose, autoCheck = false }: UpdaterDialogProps) {
+export function UpdaterDialog({ isOpen, onClose, autoCheck = false, silent = false, onLater, presetUpdateInfo, isAutoUpdate }: UpdaterDialogProps) {
   const styles = useStyles();
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(presetUpdateInfo || null);
   const [isChecking, setIsChecking] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<string>('');
@@ -110,6 +113,12 @@ export function UpdaterDialog({ isOpen, onClose, autoCheck = false }: UpdaterDia
     }
   }, [isOpen, autoCheck]);
 
+  useEffect(() => {
+    if (presetUpdateInfo !== undefined) {
+      setUpdateInfo(presetUpdateInfo);
+    }
+  }, [presetUpdateInfo]);
+
   const checkForUpdates = async () => {
     setIsChecking(true);
     setError(null);
@@ -118,6 +127,12 @@ export function UpdaterDialog({ isOpen, onClose, autoCheck = false }: UpdaterDia
     try {
       const update = await UpdaterService.checkForUpdate();
       setUpdateInfo(update);
+      
+      // In silent mode, only show dialog if update is found
+      if (silent && !update) {
+        setIsChecking(false);
+        return;
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to check for updates');
     } finally {
@@ -176,6 +191,14 @@ export function UpdaterDialog({ isOpen, onClose, autoCheck = false }: UpdaterDia
   const handleClose = () => {
     if (!isDownloading) {
       resetState();
+      onClose();
+    }
+  };
+
+  const handleLater = () => {
+    if (!isDownloading) {
+      resetState();
+      onLater?.();
       onClose();
     }
   };
@@ -269,7 +292,7 @@ export function UpdaterDialog({ isOpen, onClose, autoCheck = false }: UpdaterDia
             <Button appearance="primary" onClick={handleDownloadAndInstall}>
               Download & Install
             </Button>
-            <Button appearance="secondary" onClick={handleClose}>
+            <Button appearance="secondary" onClick={handleLater}>
               Later
             </Button>
           </DialogActions>
@@ -305,7 +328,18 @@ export function UpdaterDialog({ isOpen, onClose, autoCheck = false }: UpdaterDia
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(_, data) => !data.open && handleClose()}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(_, data) => {
+        // For auto updates, don't close on outside click
+        if (!data.open && !isAutoUpdate) {
+          handleClose();
+        } else if (!data.open && isAutoUpdate && !isDownloading) {
+          // For auto updates, only close if explicitly clicking close button
+          // This will be handled by the individual button handlers
+        }
+      }}
+    >
       <DialogSurface className={styles.dialogSurface}>
         <DialogBody>
           <DialogTitle>App Updates</DialogTitle>
@@ -321,19 +355,45 @@ export function UpdaterDialog({ isOpen, onClose, autoCheck = false }: UpdaterDia
 // Hook for easy integration
 export function useUpdateChecker() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [presetUpdateInfo, setPresetUpdateInfo] = useState<UpdateInfo | null | undefined>(undefined);
+  const [isAutoUpdate, setIsAutoUpdate] = useState(false);
 
-  const checkForUpdates = () => setIsDialogOpen(true);
+  const checkForUpdates = () => {
+    setPresetUpdateInfo(undefined);
+    setIsAutoUpdate(false);
+    setIsDialogOpen(true);
+  };
+  
   const closeDialog = () => setIsDialogOpen(false);
+  
+  const silentCheckForUpdates = useCallback(async () => {
+    try {
+      const update = await UpdaterService.checkForUpdate();
+      if (update) {
+        // Set the update info and mark as auto update
+        setPresetUpdateInfo(update);
+        setIsAutoUpdate(true);
+        setIsDialogOpen(true);
+      }
+      return update;
+    } catch (err) {
+      console.error('Silent update check failed:', err);
+      return null;
+    }
+  }, []);
 
   return {
     isDialogOpen,
     checkForUpdates,
+    silentCheckForUpdates,
     closeDialog,
-    UpdaterDialog: (props: Omit<UpdaterDialogProps, 'isOpen' | 'onClose'>) => (
+    UpdaterDialog: (props: Omit<UpdaterDialogProps, 'isOpen' | 'onClose' | 'presetUpdateInfo' | 'isAutoUpdate'>) => (
       <UpdaterDialog
         {...props}
         isOpen={isDialogOpen}
         onClose={closeDialog}
+        presetUpdateInfo={presetUpdateInfo}
+        isAutoUpdate={isAutoUpdate}
       />
     ),
   };

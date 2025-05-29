@@ -51,8 +51,16 @@ jobs:
           tagName: v__VERSION__
           releaseName: 'WOMP v__VERSION__'
           releaseBody: |
+            # Changelog
+
+            - 
+
+            ---
+
             See the assets to download this version and install.
-            WOMP___version___x64-setup.exe already includes the womp-cli.exe binary.
+
+            WOMP___VERSION___x64-setup.exe already includes the womp-cli.exe binary.
+
             If you only need the womp-cli.exe binary, you can download it from the assets by itself.
           releaseDraft: true
           includeUpdaterJson: true

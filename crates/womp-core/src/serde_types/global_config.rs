@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct GlobalConfig {
     pub autostart: bool,
+    pub auto_update: bool,
     pub theme: String,
     pub tray_icon: String,
     pub run_commands: bool,
@@ -18,6 +19,7 @@ impl GlobalConfig {
     pub fn new() -> Self {
         Self {
             autostart: false,
+            auto_update: true,
             theme: "system".to_string(),
             tray_icon: "womp".to_string(),
             run_commands: true,

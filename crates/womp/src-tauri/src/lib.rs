@@ -11,6 +11,7 @@ use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_updater::UpdaterExt;
+use time;
 use window_vibrancy::*;
 use windows::Foundation::TypedEventHandler;
 use windows::UI::ViewManagement::{UIColorType, UISettings};
@@ -64,7 +65,7 @@ pub enum DownloadEvent {
     Finished,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateInfo {
     version: String,
@@ -228,11 +229,6 @@ fn setup_profiles_dir_watcher(app_handle: AppHandle) {
                     {
                         eprintln!("Failed to watch profiles directory: {}", e);
                     } else {
-                        println!(
-                            "Watching profiles directory with 100ms debounce: {:?}",
-                            profiles_dir
-                        );
-
                         // Keep the watcher alive
                         std::thread::park();
                     }
@@ -346,36 +342,22 @@ fn emit_to_window(handle: AppHandle, window_name: &str, event: &str, payload: &s
 
 #[tauri::command]
 async fn check_for_update(app: AppHandle) -> UpdaterResult<Option<UpdateInfo>> {
-    println!("Starting update check...");
-
     match app.updater()?.check().await {
         Ok(Some(update)) => {
-            println!(
-                "Update found: {} -> {}",
-                update.current_version, update.version
-            );
-            println!("Update date: {:?}", update.date);
-            println!(
-                "Update body length: {}",
-                update.body.as_ref().map_or(0, |b| b.len())
-            );
-
             let update_info = UpdateInfo {
                 version: update.version.clone(),
                 current_version: update.current_version.clone(),
-                date: update.date.map(|dt| dt.to_string()),
+                date: update.date.map(|dt| {
+                    dt.format(&time::format_description::well_known::Rfc3339)
+                        .unwrap()
+                }),
                 body: update.body.clone(),
             };
+
             Ok(Some(update_info))
         }
-        Ok(None) => {
-            println!("No update available");
-            Ok(None)
-        }
-        Err(e) => {
-            println!("Error checking for update: {:?}", e);
-            Err(UpdaterError::from(e))
-        }
+        Ok(None) => Ok(None),
+        Err(e) => Err(UpdaterError::from(e)),
     }
 }
 

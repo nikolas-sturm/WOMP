@@ -2,6 +2,7 @@ import { NavigationView } from "@/components/NavigationView";
 import { ProfileEditor } from "@/components/ProfileEditor";
 import { Settings } from "@/components/Settings";
 import { Titlebar } from "@/components/Titlebar";
+import { useUpdateChecker } from "@/components/UpdaterDialog";
 import { useGlobalConfigStore } from "@/lib/globalConfig";
 import { useProfileStore } from "@/lib/profileStore";
 import { makeStyles } from "@fluentui/react-components";
@@ -27,6 +28,8 @@ type State = "none" | "loading" | "initialized" | "error";
 function App() {
   const classes = useStyles();
   const initializingRef = useRef<State>("none");
+  const userDeclinedUpdateRef = useRef(false);
+  const hasAutoCheckedRef = useRef(false);
 
   const {
     initProfiles,
@@ -35,7 +38,8 @@ function App() {
     initialized,
     activeProfile,
   } = useProfileStore();
-  const { globalConfig } = useGlobalConfigStore();
+  const { globalConfig, getGlobalConfig } = useGlobalConfigStore();
+  const { silentCheckForUpdates, UpdaterDialog } = useUpdateChecker();
 
   useEffect(() => {
     const init = async () => {
@@ -95,6 +99,28 @@ function App() {
     }
   }, [initialized, profiles, activeProfile, globalConfig.tray_icon]);
 
+  useEffect(() => {
+    // Initialize global config on app startup
+    getGlobalConfig();
+  }, [getGlobalConfig]);
+
+  // Auto update check on startup
+  useEffect(() => {
+    if (initialized && globalConfig.auto_update && !userDeclinedUpdateRef.current && !hasAutoCheckedRef.current) {
+      hasAutoCheckedRef.current = true;
+      // Add a small delay to ensure everything is initialized
+      const timer = setTimeout(() => {
+        silentCheckForUpdates();
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [initialized, globalConfig.auto_update]);
+
+  const handleUpdateDeclined = () => {
+    userDeclinedUpdateRef.current = true;
+  };
+
   return (
     <>
       <Titlebar />
@@ -102,6 +128,7 @@ function App() {
         <NavigationView />
         {selectedProfile === "settings" ? <Settings /> : <ProfileEditor />}
       </main>
+      <UpdaterDialog onLater={handleUpdateDeclined} />
     </>
   );
 }

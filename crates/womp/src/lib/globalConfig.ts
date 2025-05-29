@@ -6,6 +6,7 @@ export type ThemeOption = "system" | "dark" | "light";
 
 export interface GlobalConfig {
   autostart: boolean;
+  auto_update: boolean;
   theme: ThemeOption;
   tray_icon: string;
   run_commands: boolean;
@@ -26,6 +27,7 @@ interface GlobalConfigStore {
 export const useGlobalConfigStore = create<GlobalConfigStore>((set) => ({
   globalConfig: {
     autostart: false,
+    auto_update: true,
     theme: "system",
     tray_icon: "womp",
     run_commands: true,
