@@ -45,34 +45,7 @@ With WOMP, you can create profiles for each scenario and switch between them wit
 
 ### Main Installation
 
-You have multiple options to install WOMP:
-
-1. **Microsoft Store**: Search for WOMP
-
-2. **winget**:
-   ```
-   winget install --exact --id NikolasSturm.WOMP --source winget
-   ```
-
-3. **Installer**: Download the NSIS installer from the [releases page](https://github.com/nikolas-sturm/WOMP/releases)
-
-### CLI-Only Installation
-
-If you only want the command-line interface:
-
-```
-cargo install womp-cli
-```
-
-Or download the `womp-cli.exe` from the [releases page](https://github.com/nikolas-sturm/WOMP/releases)
-
-### For Developers
-
-To use WOMP's core library in your Rust projects:
-
-```
-cargo add womp-core
-```
+ **Installer**: Download the NSIS installer from the [releases page](https://github.com/nikolas-sturm/WOMP/releases)
 
 ## Screenshots
 
