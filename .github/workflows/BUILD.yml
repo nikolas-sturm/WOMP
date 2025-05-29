@@ -14,10 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@nightly
-        with:
-          targets: x86_64-pc-windows-msvc
+      - name: Setup Rust nightly toolchain
+        run: |
+          rustup toolchain install nightly
+          rustup default nightly
+          rustup target add x86_64-pc-windows-msvc
+        shell: cmd
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
