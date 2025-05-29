@@ -1,13 +1,16 @@
 use notify::RecursiveMode;
 use notify_debouncer_full::{DebounceEventResult, new_debouncer};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::Once;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tauri::Emitter;
+use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_updater::UpdaterExt;
 use window_vibrancy::*;
 use windows::Foundation::TypedEventHandler;
 use windows::UI::ViewManagement::{UIColorType, UISettings};
@@ -26,6 +29,49 @@ static COLOR_EVENTS_ENABLED: AtomicBool = AtomicBool::new(true);
 // Static holder for our handler
 static INIT: Once = Once::new();
 static mut COLOR_HANDLER: Option<Arc<ColorChangeHandler>> = None;
+
+// Updater-related structures
+#[derive(Debug, thiserror::Error)]
+pub enum UpdaterError {
+    #[error(transparent)]
+    Updater(#[from] tauri_plugin_updater::Error),
+    #[error("No update available")]
+    NoUpdateAvailable,
+}
+
+impl Serialize for UpdaterError {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.to_string().as_str())
+    }
+}
+
+type UpdaterResult<T> = std::result::Result<T, UpdaterError>;
+
+#[derive(Clone, Serialize)]
+#[serde(tag = "event", content = "data")]
+pub enum DownloadEvent {
+    #[serde(rename_all = "camelCase")]
+    Started {
+        content_length: Option<u64>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Progress {
+        chunk_length: usize,
+    },
+    Finished,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateInfo {
+    version: String,
+    current_version: String,
+    date: Option<String>,
+    body: Option<String>,
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -122,6 +168,9 @@ pub fn run() {
             get_system_colors,
             emit_to_window,
             set_color_events_enabled,
+            check_for_update,
+            download_and_install_update,
+            restart_app,
             external::apply_display_layout,
             external::save_current_display_layout,
             external::get_profiles,
@@ -291,4 +340,80 @@ fn get_system_colors() -> [String; 9] {
 fn emit_to_window(handle: AppHandle, window_name: &str, event: &str, payload: &str) {
     let window = handle.get_webview_window(window_name).unwrap();
     window.emit(event, payload).unwrap();
+}
+
+// Updater Commands
+
+#[tauri::command]
+async fn check_for_update(app: AppHandle) -> UpdaterResult<Option<UpdateInfo>> {
+    println!("Starting update check...");
+
+    match app.updater()?.check().await {
+        Ok(Some(update)) => {
+            println!(
+                "Update found: {} -> {}",
+                update.current_version, update.version
+            );
+            println!("Update date: {:?}", update.date);
+            println!(
+                "Update body length: {}",
+                update.body.as_ref().map_or(0, |b| b.len())
+            );
+
+            let update_info = UpdateInfo {
+                version: update.version.clone(),
+                current_version: update.current_version.clone(),
+                date: update.date.map(|dt| dt.to_string()),
+                body: update.body.clone(),
+            };
+            Ok(Some(update_info))
+        }
+        Ok(None) => {
+            println!("No update available");
+            Ok(None)
+        }
+        Err(e) => {
+            println!("Error checking for update: {:?}", e);
+            Err(UpdaterError::from(e))
+        }
+    }
+}
+
+#[tauri::command]
+async fn download_and_install_update(
+    app: AppHandle,
+    on_event: Channel<DownloadEvent>,
+) -> UpdaterResult<()> {
+    // Check for update first
+    let update = match app.updater()?.check().await? {
+        Some(update) => update,
+        None => return Err(UpdaterError::NoUpdateAvailable),
+    };
+
+    let mut started = false;
+
+    // Download and install with progress tracking
+    update
+        .download_and_install(
+            |chunk_length, content_length| {
+                if !started {
+                    let _ = on_event.send(DownloadEvent::Started { content_length });
+                    started = true;
+                }
+                let _ = on_event.send(DownloadEvent::Progress { chunk_length });
+            },
+            || {
+                let _ = on_event.send(DownloadEvent::Finished);
+            },
+        )
+        .await?;
+
+    Ok(())
+}
+
+#[tauri::command]
+#[allow(unreachable_code)]
+async fn restart_app(app: AppHandle) -> Result<(), String> {
+    app.restart();
+    Ok(()) // This will never be reached, but satisfies the type system
 }

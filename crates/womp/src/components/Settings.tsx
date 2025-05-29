@@ -5,6 +5,8 @@ import { Card, CardItem } from "./Card";
 import { Icon } from "./DynamicIcon";
 import { ThemeSelect } from "./ThemeSelect";
 import { TrayIconSelect } from "./TrayIconSelect";
+import { useUpdateChecker } from "./UpdaterDialog";
+import { getVersion } from '@tauri-apps/api/app';
 
 const useStyles = makeStyles({
   root: {
@@ -93,7 +95,9 @@ export function Settings() {
   const [isVisible, setIsVisible] = useState(true);
   const [sourceCodeText, setSourceCodeText] = useState(SourceCodeText.Default);
   const { globalConfig, setGlobalConfig } = useGlobalConfigStore();
-
+  const { checkForUpdates, UpdaterDialog } = useUpdateChecker();
+  const [versionString, setVersionString] = useState("");
+  
   useEffect(() => {
     if (justCopied) {
       setIsVisible(false);
@@ -145,6 +149,12 @@ export function Settings() {
         break;
     }
   };
+
+  useEffect(() => {
+    getVersion().then((version) => {
+      setVersionString(version);
+    });
+  }, []);
 
   return (
     <div className={classes.root}>
@@ -290,9 +300,22 @@ export function Settings() {
       <div className={classes.section}>
         <Label>About</Label>
         <Card
+          header="App Updates"
+          icon={"\uE895"}
+          control={
+            <Button
+              appearance="primary"
+              onClick={checkForUpdates}
+            >
+              Check for Updates
+            </Button>
+          }
+          description="Check for and install the latest version of WOMP"
+        />
+        <Card
           header="WOMP Config UI"
           iconImage={"/32x32.png"}
-          control="1.0.0"
+          control={versionString}
           description="© 2025 Nikolas Sturm"
           expandable
         >
@@ -337,6 +360,7 @@ export function Settings() {
           </div>
         </Card>
       </div >
+      <UpdaterDialog autoCheck={false} />
     </div >
   );
 }

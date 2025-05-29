@@ -224,8 +224,6 @@ export async function createTray(profiles: Profile[], activeProfile: string | nu
                 : trayIcon === "display" ? await glyphToImage("\uE7F4")
                     : await glyphToImage("\uEBC6");
 
-        console.log("icon", icon);
-
         await TrayIcon.new({
             id: "womp-tray",
             icon,
@@ -249,14 +247,10 @@ export async function updateTray(profiles: Profile[], activeProfile: string | nu
 
         const iconPath = await resolveResource("icons/32x32.png");
 
-        console.log("iconPath", iconPath);
-
         const icon =
             trayIcon === "womp" ? await Image.fromPath(iconPath)
                 : trayIcon === "display" ? await glyphToImage("\uE7F4")
                     : await glyphToImage("\uEBC6");
-
-        console.log("icon", icon);
 
         await tray.setIcon(icon);
 

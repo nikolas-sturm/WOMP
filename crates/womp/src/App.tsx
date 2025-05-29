@@ -77,8 +77,6 @@ function App() {
     }
 
     if (initializingRef.current === "none") {
-      console.log("Initializing tray");
-      console.log("config", globalConfig);
       initializingRef.current = "loading";
       createTray(profiles, activeProfile, globalConfig.tray_icon)
         .then(() => {
@@ -89,7 +87,6 @@ function App() {
           console.error("Failed to initialize tray:", error);
         });
     } else if (initializingRef.current === "initialized") {
-      console.log("config", globalConfig);
       updateTray(profiles, activeProfile, globalConfig.tray_icon).catch(
         (error) => {
           console.error("Failed to update tray:", error);
