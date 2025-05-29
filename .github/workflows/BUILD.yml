@@ -31,6 +31,14 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
 
+      - name: Build womp-core
+        run: |
+          cargo build --release -p womp-core
+
+      - name: Build womp-cli
+        run: |
+          cargo build --release -p womp-cli
+
       - name: Install frontend dependencies
         run: |
           cd crates/womp
@@ -40,6 +48,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: crates/womp
           tagName: v__VERSION__
