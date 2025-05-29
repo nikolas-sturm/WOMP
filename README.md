@@ -1,12 +1,21 @@
-# WOMP (Windows Output Manager Protocol)
-
+<p align="center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/banner_white.png">
   <source media="(prefers-color-scheme: light)" srcset="assets/banner_dark.png">
   <img alt="Fallback image description" src="assets/banner_dark.png">
 </picture>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<h1 align="center">WOMP</h1>
+<h3 align="center">The Windows Output Manager Protocol</h3>
+
+<p align="center">
+<a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-orange" alt="License: MIT" /></a>
+<a href="https://github.com/nikolas-sturm/WOMP/releases" target="_blank"><img src="https://img.shields.io/github/v/release/nikolas-sturm/WOMP" alt="Release Version" /></a>
+<a href="https://github.com/nikolas-sturm/WOMP/releases" target="_blank"><img src="https://img.shields.io/github/downloads/nikolas-sturm/WOMP/total" alt="Total Downloads" /></a>
+</p>
+
+---
 
 WOMP is a modern Windows display profile manager written in Rust, allowing you to save and switch between different display configurations with ease. It's a spiritual successor to [Monitor Profile Switcher](https://sourceforge.net/projects/monitorswitcher/) by Martin Krämer, reimagined with modern technologies.
 
