@@ -31,14 +31,6 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
 
-      - name: Build womp-core
-        run: |
-          cargo build --release -p womp-core
-
-      - name: Build womp-cli
-        run: |
-          cargo build --release -p womp-cli
-
       - name: Install frontend dependencies
         run: |
           cd crates/womp
@@ -54,4 +46,11 @@ jobs:
           releaseName: 'WOMP v__VERSION__'
           releaseBody: 'See the assets to download this version and install.'
           releaseDraft: true
+          includeUpdaterJson: true
           prerelease: false
+
+      - name: Add womp-cli.exe to release draft
+        uses: actions/upload-artifact@v4
+        with:
+          name: womp-cli.exe
+          path: target/release/womp-cli.exe

@@ -16,6 +16,7 @@
     },
     "bundle": {
         "active": true,
+        "createUpdaterArtifacts": true,
         "targets": "nsis",
         "icon": [
             "icons/32x32.png",
@@ -38,5 +39,13 @@
         },
         "copyright": "© 2025 Nikolas Sturm",
         "publisher": "Nikolas Sturm"
+    },
+    "plugins": {
+        "updater": {
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMxNjY5NkIyMTY4OTNENwpSV1RYazJnaGEya1dBMmVEU0VuSStjVEI0OEptVmxtb1BrbnFpK2ZRQWZMdHprRjNWMytaa1BrQgo=",
+            "endpoints": [
+                "https://github.com/nikolas-sturm/WOMP/releases/latest/download/latest.json"
+            ]
+        }
     }
 }
