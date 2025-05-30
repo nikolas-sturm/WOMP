@@ -556,7 +556,9 @@ impl CCDWrapper {
         }
 
         if global_config.save_audio_output {
-            self.set_default_audio_output(&display_layout.globalInfo.audioOutput.as_ref().unwrap())?;
+            self.set_default_audio_output(
+                &display_layout.globalInfo.audioOutput.as_ref().unwrap(),
+            )?;
         }
 
         Ok(())

@@ -32,7 +32,7 @@ pub struct VideoSignalInfo {
     pub activeSize: DISPLAYCONFIG_2DREGION,
     #[serde(with = "win32_region")]
     pub totalSize: DISPLAYCONFIG_2DREGION,
-    #[serde(with = "Win32VideoSignalInfoUnion")]
+    #[serde(with = "Win32VideoSignalInfoUnion", rename = "videoStandard")]
     pub Anonymous: DISPLAYCONFIG_VIDEO_SIGNAL_INFO_0,
     #[serde(with = "win32_scanline")]
     pub scanLineOrdering: DISPLAYCONFIG_SCANLINE_ORDERING,
